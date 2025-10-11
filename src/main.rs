@@ -1,10 +1,11 @@
 use crate::compiler_error::CompilerError::NoInputFiles;
-use crate::tokenizer::tokenize_file;
+use crate::lexer::tokenize_file;
+use crate::statement::get_statements;
 
-mod tokenizer;
-// mod line;
+mod lexer;
 mod compiler_error;
 // mod ast;
+mod statement;
 
 fn compile_program(args: Vec<String>) -> compiler_error::Result<()> {
     const MIN_ARG_COUNT: usize = 2;
@@ -15,8 +16,10 @@ fn compile_program(args: Vec<String>) -> compiler_error::Result<()> {
 
     let tokens = tokenize_file(args[1].to_string())?;
 
-    for line in tokens.lines {
-        println!("{line:?}")
+    let statements = get_statements(tokens)?;
+
+    for statement in &statements.statements {
+        println!("{statement:?}\n");
     }
 
     Ok(())

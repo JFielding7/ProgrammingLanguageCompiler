@@ -6,6 +6,8 @@ pub enum CompilerError {
     NoInputFiles,
     #[error("Error: Line {0}: Invalid Token")]
     InvalidToken(usize),
+    #[error("Error: Line {0}: Expected token")]
+    ExpectedToken(usize),
     #[error("Error: Line {0}: Invalid Indent Size")]
     InvalidIndent(usize),
     #[error("{0}")]
