@@ -1,14 +1,17 @@
-use crate::ast::build_ast;
-use crate::compiler_error::CompilerError::NoInputFiles;
+use crate::ast::ast_node::build_ast;
+use crate::error::compiler_error::CompilerError::NoInputFiles;
+use crate::error::compiler_error::Result;
 use crate::lexer::tokenize_file;
 use crate::statement::get_statements;
 
 mod lexer;
-mod compiler_error;
 mod statement;
 mod ast;
+mod expression;
+mod token;
+mod error;
 
-fn compile_program(args: Vec<String>) -> compiler_error::Result<()> {
+fn compile_program(args: Vec<String>) -> Result<()> {
     const MIN_ARG_COUNT: usize = 2;
 
     if args.len() < MIN_ARG_COUNT {
@@ -23,7 +26,7 @@ fn compile_program(args: Vec<String>) -> compiler_error::Result<()> {
     //     println!("{statement:?}\n");
     // }
 
-    build_ast(statements);
+    build_ast(statements).expect("Failed to build ast");
 
     Ok(())
 }

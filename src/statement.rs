@@ -1,5 +1,5 @@
-use crate::lexer::{SourceFileTokens, Token};
-
+use crate::lexer::SourceFileTokens;
+use crate::token::Token;
 
 pub struct SourceFileStatements {
     pub file_name: String,
