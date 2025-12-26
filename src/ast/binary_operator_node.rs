@@ -1,7 +1,7 @@
-use crate::ast::ast_node::ASTNode;
+use crate::ast::ast_tree::ASTNode;
 use crate::ast::binary_operator_node::BinaryOperatorType::*;
-use crate::token::TokenType::*;
-use crate::token::Token;
+use crate::lexer::token::TokenType::*;
+use crate::lexer::token::Token;
 
 #[derive(Debug)]
 pub struct BinaryOperatorNode {

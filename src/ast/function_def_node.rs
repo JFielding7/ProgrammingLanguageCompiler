@@ -1,11 +1,9 @@
-use std::vec::IntoIter;
-use crate::ast::ast_node::ASTNode;
-use crate::ast::ast_node::ASTNode::FunctionDefinition;
+use crate::ast::ast_tree::{ASTNode, TokenIter};
 use crate::ast::parameter_node::ParameterNode;
-use crate::error::compiler_error::CompilerError::ExpectTokenNotFound;
 use crate::error::compiler_error::Result;
-use crate::token::{Token, TokenOpt};
-use crate::token::TokenType::{CloseParen, Comma, Identifier, OpenParen};
+use crate::lexer::token::TokenType::{CloseParen, Comma, Identifier, OpenParen};
+use crate::lexer::token::{Token, TokenOpt};
+use std::vec::IntoIter;
 
 #[derive(Debug)]
 pub struct FunctionDefNode {
@@ -15,44 +13,49 @@ pub struct FunctionDefNode {
 }
 
 impl FunctionDefNode {
-    pub fn new(mut tokens_iter: IntoIter<Token>) -> Result<ASTNode> {
-        let func_name = tokens_iter.next().assert_type(Identifier)?.token_str;
-
-        tokens_iter.next().assert_type(OpenParen)?;
-
-        let mut params = Vec::new();
-        let mut next_token = tokens_iter.next().ok_or_else(|| ExpectTokenNotFound(None, CloseParen))?;
-
-        if matches!(next_token.token_type, Identifier) {
-            loop {
-                let param_type = next_token.token_str;
-                let param_name = tokens_iter.next().assert_type(Identifier)?.token_str;
-
-                params.push(ParameterNode::new(param_name, param_type));
-
-                match tokens_iter.next() {
-                    None => return Err(ExpectTokenNotFound(None, CloseParen)),
-                    Some(token) => {
-                        if matches!(token.token_type, CloseParen) {
-                            break;
-                        }
-                        if !matches!(token.token_type, Comma) {
-                            return Err(ExpectTokenNotFound(Some(token), Comma));
-                        }
-                    }
-                }
-
-                next_token = tokens_iter.next().assert_type(Identifier)?;
-            }
-        }
-        else if !matches!(next_token.token_type, CloseParen) {
-            return Err(ExpectTokenNotFound(Some(next_token), CloseParen))
-        }
-
-        Ok(FunctionDefinition(FunctionDefNode {
-            name: func_name.clone(),
-            params,
-            body: vec![],
-        }))
+    pub fn new(name: String, params: Vec<ParameterNode>) -> Self {
+        Self { name, params, body: vec![] }
     }
+
+    pub fn parse(mut tokens: TokenIter) -> Result<Self> {
+
+        let name = parse_function_name(&mut tokens)?;
+        let params = parse_parameters(&mut tokens)?;
+
+        // TODO: parse body
+
+        Ok(Self::new(name, params))
+    }
+}
+
+fn parse_function_name(tokens: &mut TokenIter) -> Result<String> {
+    tokens.next().assert_type(Identifier).map(|token| token.token_str)
+}
+
+fn parse_parameters(tokens: &mut TokenIter) -> Result<Vec<ParameterNode>> {
+    tokens.next().assert_type(OpenParen)?;
+
+    let mut params = Vec::new();
+
+    if let Some(token) = tokens.peek() {
+        if *token == CloseParen {
+            return Ok(params);
+        }
+    }
+
+    params.push(parse_parameter(tokens)?);
+
+    while tokens.next_if(|token| *token == Comma).is_some() {
+        params.push(parse_parameter(tokens)?);
+    }
+
+    tokens.next().assert_type(CloseParen)?;
+    Ok(params)
+}
+
+fn parse_parameter(tokens: &mut TokenIter) -> Result<ParameterNode> {
+    let param_type = tokens.next().assert_type(Identifier)?.token_str;
+    let param_name = tokens.next().assert_type(Identifier)?.token_str;
+
+    Ok(ParameterNode::new(param_name, param_type))
 }

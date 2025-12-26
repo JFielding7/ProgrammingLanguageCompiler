@@ -1,5 +1,5 @@
 use std::{fmt, io};
-use crate::token::{Token, TokenType};
+use crate::lexer::token::{Token, TokenType};
 
 #[derive(thiserror::Error, Debug)]
 pub enum CompilerError {

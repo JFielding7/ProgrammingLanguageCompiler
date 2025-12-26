@@ -47,8 +47,6 @@ pub enum TokenType {
     Comment,
 
     Indent(usize),
-
-    Empty,
 }
 
 impl Token {

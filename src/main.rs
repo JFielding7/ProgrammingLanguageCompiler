@@ -1,15 +1,13 @@
-use crate::ast::ast_node::build_ast;
+use crate::ast::ast_tree::build_ast;
 use crate::error::compiler_error::CompilerError::NoInputFiles;
 use crate::error::compiler_error::Result;
-use crate::lexer::tokenize_file;
-use crate::statement::get_statements;
+use crate::lexer::lexer::TokenizedSource;
+use parser::statement::ParsedSource;
 
-mod lexer;
-mod statement;
 mod ast;
-mod expression;
-mod token;
+mod parser;
 mod error;
+mod lexer;
 
 fn compile_program(args: Vec<String>) -> Result<()> {
     const MIN_ARG_COUNT: usize = 2;
@@ -18,15 +16,11 @@ fn compile_program(args: Vec<String>) -> Result<()> {
         return Err(NoInputFiles)
     }
 
-    let tokens = tokenize_file(args[1].to_string())?;
+    let tokens = TokenizedSource::tokenize_file(args[1].to_string())?;
 
-    let statements = get_statements(tokens);
+    let ast = build_ast(tokens)?;
 
-    // for statement in &statements.statements {
-    //     println!("{statement:?}\n");
-    // }
-
-    build_ast(statements).expect("Failed to build ast");
+    println!("dk won again");
 
     Ok(())
 }
@@ -34,7 +28,7 @@ fn compile_program(args: Vec<String>) -> Result<()> {
 fn main()  {
     let args = std::env::args().collect::<Vec<_>>();
 
-    if let Err(error) =  compile_program(args) {
-        eprintln!("{error}");
+    if let Err(error) = compile_program(args) {
+        println!("{error}");
     }
 }

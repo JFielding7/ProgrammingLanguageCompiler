@@ -1,5 +1,5 @@
-use crate::statement::SourceFileStatements;
-use crate::ast::ast_node::ASTNode::*;
+use std::iter::Peekable;
+use crate::ast::ast_tree::ASTNode::*;
 use crate::ast::binary_operator_node::BinaryOperatorNode;
 use crate::ast::function_call_node::FunctionCallNode;
 use crate::ast::function_def_node::FunctionDefNode;
@@ -7,8 +7,14 @@ use crate::ast::parameter_node::ParameterNode;
 use crate::ast::source_file_node::SourceFileNode;
 use crate::error::compiler_error::Result;
 use crate::error::compiler_error::CompilerError::InvalidExpression;
-use crate::token::{Token};
-use crate::token::TokenType::*;
+use crate::lexer::lexer::TokenizedSource;
+use crate::parser::statement::{ParsedSource, Statement};
+use crate::lexer::token::{Token};
+use crate::lexer::token::TokenType::*;
+use std::vec::IntoIter;
+
+
+pub type TokenIter = Peekable<IntoIter<Token>>;
 
 #[derive(Debug)]
 pub enum ASTNode {
@@ -21,7 +27,7 @@ pub enum ASTNode {
 
     BinaryOperator(BinaryOperatorNode),
 
-    FunctionDefinition(FunctionDefNode),
+    FunctionDef(FunctionDefNode),
 
     FunctionCall(FunctionCallNode),
 
@@ -54,23 +60,27 @@ impl ASTNode {
     }
 }
 
-fn get_ast_node(statement: Vec<Token>) -> Result<ASTNode> {
-    let mut tokens = statement.into_iter();
+fn get_ast_node(statement: Statement) -> Result<ASTNode> {
+    let mut tokens = statement.into_iter().peekable();
 
-    // let indent_size = tokens.next().indent_size()?;
+    let indent_size = tokens.next();
     let token = tokens.next().unwrap();
 
     match token.token_type {
-        Fn => Ok(FunctionDefNode::new(tokens)?),
+        Fn => Ok(FunctionDef(FunctionDefNode::parse(tokens)?)),
         _ => Err(InvalidExpression(token.error_info))
     }
 }
 
-pub fn build_ast(statements: SourceFileStatements) -> Result<ASTNode> {
-    for statement in statements.statements {
-        println!("{statement:?}");
-        println!("{:?}", get_ast_node(statement));
+pub fn build_ast(tokens: TokenizedSource) -> Result<ASTNode> {
+
+    let file_name = tokens.file_name.to_owned();
+    let statements = ParsedSource::new(tokens);
+
+    for statement in statements {
+        let node = get_ast_node(statement)?;
+        println!("{node:?}");
     }
 
-    Ok(SourceFile(SourceFileNode::new(statements.file_name, vec![])))
+    Ok(SourceFile(SourceFileNode::new(file_name, vec![])))
 }

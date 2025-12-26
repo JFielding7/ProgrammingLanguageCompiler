@@ -1,4 +1,4 @@
-use crate::ast::ast_node::ASTNode;
+use crate::ast::ast_tree::ASTNode;
 
 #[derive(Debug)]
 pub struct FunctionCallNode {

@@ -1,4 +1,4 @@
-pub mod ast_node;
+pub mod ast_tree;
 mod function_def_node;
 mod parameter_node;
 mod binary_operator_node;
