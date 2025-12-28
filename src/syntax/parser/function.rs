@@ -1,31 +1,21 @@
-use crate::ast::ast_tree::{ASTNode, TokenIter};
-use crate::ast::parameter_node::ParameterNode;
-use crate::error::compiler_error::Result;
-use crate::lexer::token::TokenType::{CloseParen, Comma, Identifier, OpenParen};
-use crate::lexer::token::{Token, TokenOpt};
+use std::iter::{Peekable, Skip};
 use std::vec::IntoIter;
+use crate::error::compiler_error::Result;
+use crate::lexer::token::{Token, TokenOpt};
+use crate::lexer::token::TokenType::{CloseParen, Comma, Identifier, OpenParen};
+use crate::syntax::ast::function_def_node::FunctionDefNode;
+use crate::syntax::ast::parameter_node::ParameterNode;
+use crate::syntax::parser::statement::Statement;
 
-#[derive(Debug)]
-pub struct FunctionDefNode {
-    name: String,
-    params: Vec<ParameterNode>,
-    body: Vec<ASTNode>,
-}
+type TokenIter = Peekable<Skip<IntoIter<Token>>>;
 
-impl FunctionDefNode {
-    pub fn new(name: String, params: Vec<ParameterNode>) -> Self {
-        Self { name, params, body: vec![] }
-    }
+pub fn parse_function_def(statement: Statement) -> Result<FunctionDefNode> {
+    let mut tokens = statement.into_iter().skip(2).peekable();
 
-    pub fn parse(mut tokens: TokenIter) -> Result<Self> {
+    let name = parse_function_name(&mut tokens)?;
+    let params = parse_parameters(&mut tokens)?;
 
-        let name = parse_function_name(&mut tokens)?;
-        let params = parse_parameters(&mut tokens)?;
-
-        // TODO: parse body
-
-        Ok(Self::new(name, params))
-    }
+    Ok(FunctionDefNode::new(name, params))
 }
 
 fn parse_function_name(tokens: &mut TokenIter) -> Result<String> {
@@ -50,6 +40,7 @@ fn parse_parameters(tokens: &mut TokenIter) -> Result<Vec<ParameterNode>> {
     }
 
     tokens.next().assert_type(CloseParen)?;
+
     Ok(params)
 }
 

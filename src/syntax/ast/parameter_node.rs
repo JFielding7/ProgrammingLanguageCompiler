@@ -5,7 +5,7 @@ pub struct ParameterNode {
 }
 
 impl ParameterNode {
-    pub(crate) fn new(name: String, data_type: String) -> Self {
+    pub fn new(name: String, data_type: String) -> Self {
         Self { name, data_type }
     }
 }

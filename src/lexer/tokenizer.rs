@@ -10,20 +10,20 @@ use std::io::Read;
 type Line = Vec<Token>;
 
 #[derive(Debug)]
-pub struct TokenizedSource {
+pub struct SourceLines {
     pub file_name: String,
     pub lines: Vec<Line>
 }
 
-impl TokenizedSource {
-    pub fn tokenize_file(file_name: String) -> Result<TokenizedSource> {
+impl SourceLines {
+    pub fn tokenize_file(file_name: String) -> Result<SourceLines> {
         let lines = read_source_file(&file_name)?
             .split("\n")
             .enumerate()
             .map(|(i, line)| tokenize_line(i + 1, line))
             .collect::<Result<Vec<Line>>>()?;
 
-        Ok(TokenizedSource {
+        Ok(SourceLines {
             lines,
             file_name,
         })

@@ -1,0 +1,30 @@
+use crate::syntax::ast::ast_node::ASTNode;
+
+#[derive(Debug)]
+pub enum BinaryOperatorType {
+    Add,
+    Sub,
+    Mul,
+    Div,
+}
+
+#[derive(Debug)]
+pub struct BinaryOperatorNode {
+    op_type: BinaryOperatorType,
+    left: Box<ASTNode>,
+    right: Box<ASTNode>,
+}
+
+impl BinaryOperatorNode {
+    pub fn new(
+        op_type: BinaryOperatorType,
+        left: ASTNode,
+        right: ASTNode,
+    ) -> Self {
+        Self {
+            op_type,
+            left: Box::new(left),
+            right: Box::new(right),
+        }
+    }
+}

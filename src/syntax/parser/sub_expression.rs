@@ -1,8 +1,9 @@
-use crate::ast::ast_tree::ASTNode;
 use crate::error::compiler_error::Result;
 use crate::error::compiler_error::CompilerError::InvalidExpression;
 use crate::lexer::token::{Token, TokenType};
 use crate::lexer::token::TokenType::{Assign, CloseParen, Identifier, IntLiteral, Minus, OpenParen, Plus, StringLiteral};
+use crate::syntax::ast::ast_node::ASTNode;
+use crate::syntax::ast::binary_operator_node::BinaryOperatorNode;
 
 
 const OPERATOR_GROUPS_COUNT: usize = 2;
@@ -66,7 +67,7 @@ impl <'a> SubExpressionParser<'a> {
                 let index = i  as usize;
 
                 if in_operator_group(self.start_op_group, &self.tokens[index]) {
-                    let op_token = self.tokens[index].clone();
+                    let op_token = &self.tokens[index];
 
                     let left_node = self
                         .sub_expression(0, index, self.start_op_group)
@@ -76,11 +77,8 @@ impl <'a> SubExpressionParser<'a> {
                         .sub_expression(index + 1, self.len(), self.start_op_group)
                         .parse()?;
 
-                    return Ok(ASTNode::binary_operator(
-                        op_token,
-                        Box::new(left_node),
-                        Box::new(right_node),
-                    ))
+                    return Ok(BinaryOperatorNode::new(op_token.into(), left_node, right_node).into());
+                    
                 } else if self.tokens[index] == CloseParen {
                     i = self.paren_matches[index] as isize;
                 } else {
@@ -103,9 +101,9 @@ fn parse_value(token: &Token) -> Result<ASTNode> {
     let token_string = token.token_str.clone();
 
     match token.token_type {
-        IntLiteral => Ok(ASTNode::int_iteral(token_string)),
-        StringLiteral => Ok(ASTNode::string_iteral(token_string)),
-        Identifier => Ok(ASTNode::identifier(token_string)),
+        IntLiteral    => Ok(ASTNode::IntLiteral(token_string)),
+        StringLiteral => Ok(ASTNode::StringLiteral(token_string)),
+        Identifier    => Ok(ASTNode::Identifier(token_string)),
         _ => Err(InvalidExpression(token.error_info))
     }
 }

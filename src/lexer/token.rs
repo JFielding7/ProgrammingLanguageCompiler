@@ -64,6 +64,13 @@ impl Token {
             _ => true,
         }
     }
+
+    pub fn indent_size(&self) -> Result<usize> {
+        match self.token_type {
+            Indent(size) => Ok(size),
+            _ => Err(ExpectTokenNotFound(None, Indent(0)))
+        }
+    }
 }
 
 impl PartialEq<TokenType> for Token {
@@ -74,8 +81,6 @@ impl PartialEq<TokenType> for Token {
 
 pub trait TokenOpt {
     fn assert_type(self, token_type: TokenType) -> Result<Token>;
-
-    fn indent_size(self) -> Result<usize>;
 }
 
 impl TokenOpt for Option<Token> {
@@ -87,18 +92,6 @@ impl TokenOpt for Option<Token> {
                     Ok(token)
                 } else {
                     Err(ExpectTokenNotFound(Some(token), token_type))
-                }
-            }
-        }
-    }
-
-    fn indent_size(self) -> Result<usize> {
-        match self {
-            None => Err(ExpectTokenNotFound(None, Indent(0))),
-            Some(token) => {
-                match token.token_type {
-                    Indent(size) => Ok(size),
-                    _ => Err(ExpectTokenNotFound(Some(token), Indent(0)))
                 }
             }
         }

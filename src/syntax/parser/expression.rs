@@ -1,18 +1,21 @@
-use crate::ast::ast_tree::ASTNode;
 use crate::error::compiler_error::Result;
 use crate::error::compiler_error::CompilerError::UnmatchedParen;
 use crate::lexer::token::TokenType::*;
 use crate::lexer::token::Token;
-use crate::parser::sub_expression::SubExpressionParser;
+use crate::syntax::ast::ast_node::ASTNode;
+use crate::syntax::ast::binary_operator_node::BinaryOperatorType;
+use crate::syntax::parser::statement::Statement;
+use crate::syntax::parser::sub_expression::SubExpressionParser;
 
-pub struct ExpressionParser {
-    tokens: Vec<Token>,
+pub struct ExpressionParser<'a> {
+    tokens: &'a [Token],
     paren_matches: Vec<usize>,
 }
 
-impl ExpressionParser {
-    pub fn parse(tokens: Vec<Token>) -> Result<ASTNode> {
-        let parser = Self::new(tokens)?;
+impl<'a> ExpressionParser<'a> {
+    pub fn parse(statement: &'a Statement) -> Result<ASTNode> {
+
+        let parser = Self::new(&statement.tokens[1..])?;
 
         SubExpressionParser::new(
             &parser.tokens,
@@ -20,10 +23,9 @@ impl ExpressionParser {
         ).parse()
     }
     
-    fn new(
-        tokens: Vec<Token>,
-    ) -> Result<Self> {
-        let paren_matches = Self::match_parens(&tokens)?;
+    fn new(tokens: &'a [Token]) -> Result<Self> {
+
+        let paren_matches = Self::match_parens(tokens)?;
 
         Ok(Self {
             tokens,
@@ -31,7 +33,7 @@ impl ExpressionParser {
         })
     }
 
-    fn match_parens(expression: &Vec<Token>) -> Result<Vec<usize>> {
+    fn match_parens(expression: &'a [Token]) -> Result<Vec<usize>> {
 
         let mut paren_matches = vec![0; expression.len()];
         let mut open_parens = Vec::new();
@@ -53,5 +55,15 @@ impl ExpressionParser {
         }
 
         Ok(paren_matches)
+    }
+}
+
+impl From<&Token> for BinaryOperatorType {
+    fn from(op_token: &Token) -> Self {
+        match op_token.token_type {
+            Plus => BinaryOperatorType::Add,
+            Minus => BinaryOperatorType::Sub,
+            _ => BinaryOperatorType::Mul, // TODO
+        }
     }
 }
