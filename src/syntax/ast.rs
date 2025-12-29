@@ -10,15 +10,13 @@ use crate::syntax::ast::function_def_node::FunctionDefNode;
 
 #[derive(Debug)]
 pub struct AST {
-    file_name: String,
     functions: Vec<FunctionDefNode>,
     top_level_code: Vec<ASTNode>,
 }
 
 impl AST {
-    pub fn new(file_name: String, functions: Vec<FunctionDefNode>, top_level_code: Vec<ASTNode>) -> Self {
+    pub fn new(functions: Vec<FunctionDefNode>, top_level_code: Vec<ASTNode>) -> Self {
         Self {
-            file_name,
             functions,
             top_level_code,
         }

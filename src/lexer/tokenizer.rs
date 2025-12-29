@@ -1,32 +1,38 @@
 use crate::error::compiler_error::CompilerError::{InvalidIndent, InvalidToken};
-use crate::error::compiler_error::Result;
+use crate::error::compiler_error::{CompilerError, Result};
 use crate::lexer::token::TokenType::Indent;
 use crate::lexer::token::{Token, TokenType};
 use logos::Logos;
-use std::fs::File;
+use std::fs::{read_to_string, File};
 use std::io::Read;
+use std::path::Path;
 use crate::error::error_info::ErrorInfo;
 
 type Line = Vec<Token>;
+pub struct SourceLines(Vec<Line>);
 
-#[derive(Debug)]
-pub struct SourceLines {
-    pub file_name: String,
-    pub lines: Vec<Line>
-}
 
-impl SourceLines {
-    pub fn tokenize_file(file_name: String) -> Result<SourceLines> {
-        let lines = read_source_file(&file_name)?
-            .split("\n")
+impl TryFrom<&Path> for SourceLines {
+    type Error = CompilerError;
+
+    fn try_from(path: &Path) -> Result<Self> {
+        let src = read_to_string(path)?;
+        let lines = src
+            .lines()
             .enumerate()
             .map(|(i, line)| tokenize_line(i + 1, line))
             .collect::<Result<Vec<Line>>>()?;
 
-        Ok(SourceLines {
-            lines,
-            file_name,
-        })
+        Ok(Self(lines))
+    }
+}
+
+impl IntoIterator for SourceLines {
+    type Item = Line;
+    type IntoIter = std::vec::IntoIter<Line>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }
 

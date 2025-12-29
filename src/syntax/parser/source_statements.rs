@@ -1,31 +1,21 @@
-use crate::lexer::tokenizer::SourceLines;
+use std::iter::Peekable;
 use std::vec::IntoIter;
+use crate::error::compiler_error::Result;
+use crate::lexer::tokenizer::SourceLines;
+use crate::syntax::ast::ast_node::ASTNode;
 use crate::syntax::parser::statement::Statement;
 
-pub struct SourceStatements {
-    pub file_name: String,
-    pub statements: Vec<Statement>
-}
-
-impl SourceStatements {
-    fn new(file_name: String, statements: Vec<Statement>) -> Self {
-        SourceStatements {
-            file_name,
-            statements,
-        }
-    }
-}
+pub struct SourceStatements(Vec<Statement>);
 
 impl From<SourceLines> for SourceStatements {
     fn from(source_lines: SourceLines) -> Self {
-        let SourceLines { file_name, lines } = source_lines;
 
         let mut statements = Vec::new();
         let mut curr_statement_tokens = Vec::new();
 
         let mut legal_statement_end = false;
 
-        for mut line in lines {
+        for mut line in source_lines {
             if line.len() <= 1 {
                 continue;
             }
@@ -51,15 +41,43 @@ impl From<SourceLines> for SourceStatements {
             statements.push(Statement::new(curr_statement_tokens));
         }
 
-        Self::new(file_name, statements)
+        Self(statements)
     }
 }
 
 impl IntoIterator for SourceStatements {
     type Item = Statement;
-    type IntoIter = IntoIter<Statement>;
-
+    type IntoIter = SourceStatementsIter;
+    
     fn into_iter(self) -> Self::IntoIter {
-        self.statements.into_iter()
+        SourceStatementsIter(self.0.into_iter().peekable())
+    }
+}
+
+pub struct SourceStatementsIter(Peekable<IntoIter<Statement>>);
+
+impl SourceStatementsIter {
+    pub fn ast_child_nodes(&mut self, parent_indent_size: usize) -> Result<Vec<ASTNode>> {
+        let mut child_nodes = Vec::new();
+
+        while let Some(child) = &mut self.0.peek() {
+
+            if child.indent_size <= parent_indent_size {
+                break;
+            }
+
+            let statement = self.0.next().unwrap();
+            child_nodes.push(statement.to_ast_node(self)?)
+        }
+
+        Ok(child_nodes)
+    }
+}
+
+impl Iterator for SourceStatementsIter {
+    type Item = Statement;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
     }
 }

@@ -79,25 +79,6 @@ impl PartialEq<TokenType> for Token {
     }
 }
 
-pub trait TokenOpt {
-    fn assert_type(self, token_type: TokenType) -> Result<Token>;
-}
-
-impl TokenOpt for Option<Token> {
-    fn assert_type(self, token_type: TokenType) -> Result<Token> {
-        match self {
-            None => ExpectedToken::new(None, token_type).into(),
-            Some(token) => {
-                if token == token_type {
-                    Ok(token)
-                } else {
-                    ExpectedToken::new(Some(token), token_type).into()
-                }
-            }
-        }
-    }
-}
-
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.token_str.as_str())

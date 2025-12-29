@@ -1,3 +1,4 @@
+use std::path::Path;
 use crate::error::compiler_error::CompilerError::NoInputFiles;
 use crate::error::compiler_error::Result;
 use crate::lexer::tokenizer::SourceLines;
@@ -14,9 +15,11 @@ fn compile_program(args: Vec<String>) -> Result<()> {
         return Err(NoInputFiles)
     }
 
-    let tokens = SourceLines::tokenize_file(args[1].to_string())?;
+    let file_name = &args[1].to_string();
+    let path = Path::new(file_name);
+    let source_lines: SourceLines = path.try_into()?;
 
-    let ast: AST = tokens.try_into()?;
+    let ast: AST = source_lines.try_into()?;
     
     println!("{:?}", ast);
     

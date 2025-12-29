@@ -3,7 +3,7 @@ use crate::error::compiler_error::Result;
 use crate::lexer::tokenizer::SourceLines;
 use crate::syntax::ast::ast_node::ASTNode::FunctionDef;
 use crate::syntax::ast::AST;
-use crate::syntax::parser::source_statements::SourceStatements;
+use crate::syntax::parser::source_statements::{SourceStatements, SourceStatementsIter};
 
 pub mod expression;
 mod sub_expression;
@@ -16,12 +16,12 @@ impl TryFrom<SourceLines> for AST {
 
     fn try_from(source_lines: SourceLines) -> Result<Self> {
 
-        let SourceStatements { statements, file_name } = source_lines.into();
+        let statements: SourceStatements = source_lines.into();
 
         let mut functions = vec![];
         let mut top_level_code = vec![];
 
-        let mut next_statements = statements.into_iter().peekable();
+        let mut next_statements = statements.into_iter();
 
         while let Some(statement) = next_statements.next() {
             if statement.len() <= 1 {
@@ -34,6 +34,6 @@ impl TryFrom<SourceLines> for AST {
             }
         }
 
-        Ok(AST::new(file_name, functions, top_level_code))
+        Ok(AST::new(functions, top_level_code))
     }
 }
