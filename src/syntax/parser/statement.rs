@@ -1,5 +1,5 @@
 use crate::error::compiler_error::Result;
-use crate::error::expected_token::ExpectedToken;
+use crate::error::expected_token::ExpectedTokenError;
 use crate::lexer::token::TokenType::Fn;
 use crate::lexer::token::{Token, TokenType};
 use crate::syntax::ast::ast_node::ASTNode;
@@ -61,34 +61,42 @@ impl<'a> StatementParser<'a> {
             curr_token_index: 0,
         }
     }
-    
+
     pub fn next_token_of_type(&mut self, token_type: TokenType) -> Result<Token> {
         let statement = self.statement;
 
         if self.curr_token_index >= statement.len() {
-            return ExpectedToken::new(None, token_type).into()
+            return ExpectedTokenError::new(
+                None, token_type, statement[statement.len() - 1].error_info.clone()
+            ).into()
         }
 
         let token = statement[self.curr_token_index].clone();
+        self.curr_token_index += 1;
 
         if token == token_type {
             Ok(token)
         } else {
-            ExpectedToken::new(Some(token), token_type).into()
+            let error_info = token.error_info.clone();
+            ExpectedTokenError::new(Some(token), token_type, error_info).into()
         }
     }
-    
+
     pub fn peek(&self) -> Option<&Token> {
         let curr_token_index = self.curr_token_index;
         let statement = self.statement;
-        
+
         if curr_token_index >= statement.len() {
             None
         } else {
             Some(&statement[curr_token_index])
         }
     }
-    
+
+    pub fn skip(&mut self, n: usize) {
+        self.curr_token_index += n;
+    }
+
     pub fn is_next_token_of_type(&self, token_type: TokenType) -> bool {
         self.statement[self.curr_token_index] == token_type
     }

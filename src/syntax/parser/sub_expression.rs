@@ -89,7 +89,7 @@ impl <'a> SubExpressionParser<'a> {
             self.start_op_group += 1;
         }
 
-        Err(InvalidExpression(self.tokens[0].error_info))
+        Err(InvalidExpression(self.tokens[0].error_info.clone()))
     }
 
     fn len(&self) -> usize {
@@ -104,7 +104,7 @@ fn parse_value(token: &Token) -> Result<ASTNode> {
         IntLiteral    => Ok(ASTNode::IntLiteral(token_string)),
         StringLiteral => Ok(ASTNode::StringLiteral(token_string)),
         Identifier    => Ok(ASTNode::Identifier(token_string)),
-        _ => Err(InvalidExpression(token.error_info))
+        _ => Err(InvalidExpression(token.error_info.clone()))
     }
 }
 

@@ -3,9 +3,9 @@ use crate::error::compiler_error::{CompilerError, Result};
 use crate::lexer::token::TokenType::Indent;
 use crate::lexer::token::{Token, TokenType};
 use logos::Logos;
-use std::fs::{read_to_string, File};
-use std::io::Read;
-use std::path::Path;
+use std::fs::read_to_string;
+use std::path::{Path, PathBuf};
+use std::rc::Rc;
 use crate::error::error_info::ErrorInfo;
 
 type Line = Vec<Token>;
@@ -17,10 +17,9 @@ impl TryFrom<&Path> for SourceLines {
 
     fn try_from(path: &Path) -> Result<Self> {
         let src = read_to_string(path)?;
-        let lines = src
-            .lines()
+        let lines = src.lines()
             .enumerate()
-            .map(|(i, line)| tokenize_line(i + 1, line))
+            .map(|(i, line)| tokenize_line(path, i + 1, Rc::new(line.to_string())))
             .collect::<Result<Vec<Line>>>()?;
 
         Ok(Self(lines))
@@ -36,19 +35,12 @@ impl IntoIterator for SourceLines {
     }
 }
 
-fn read_source_file(name: &String) -> Result<String> {
-    let mut file = File::open(name)?;
-    let mut content = String::new();
-    file.read_to_string(&mut content)?;
-    Ok(content)
-}
-
-fn get_indent_token(line_num: usize, line: &str) -> Result<Token> {
+fn get_indent_token(path_buf: Rc<PathBuf>, line_content: Rc<String>, line_num: usize) -> Result<Token> {
     const INDENT_SIZE: usize = 4;
 
-    let indent = line.chars().take_while(|&c| c == ' ').collect::<String>();
+    let indent = line_content.chars().take_while(|&c| c == ' ').collect::<String>();
     let indent_spaces = indent.len();
-    let error_info = ErrorInfo::new(line_num, 0, indent_spaces);
+    let error_info = ErrorInfo::new(path_buf, line_content, line_num, 0, indent_spaces);
 
     if (indent_spaces % INDENT_SIZE) != 0 {
         Err(InvalidIndent(error_info))
@@ -61,18 +53,24 @@ fn get_indent_token(line_num: usize, line: &str) -> Result<Token> {
     }
 }
 
-fn tokenize_line(line_num: usize, line: &str) -> Result<Line> {
+fn tokenize_line(path: &Path, line_num: usize, line_content: Rc<String>) -> Result<Line> {
 
-    let mut tokens = vec![get_indent_token(line_num, line)?];
+    let path_buf = Rc::new(path.to_path_buf());
 
-    let mut lexer = TokenType::lexer(&line);
+    let mut tokens = vec![
+        get_indent_token(path_buf.clone(), line_content.clone(), line_num)?
+    ];
+
+    let mut lexer = TokenType::lexer(&line_content);
 
     while let Some(next_token) = lexer.next() {
         let span = lexer.span();
 
-        let error_info = ErrorInfo::new(line_num, span.start, span.end);
+        let error_info = ErrorInfo::new(
+            path_buf.clone(), line_content.clone(), line_num, span.start, span.end
+        );
         let token_type = next_token
-            .map_err(|_| InvalidToken(error_info))?;
+            .map_err(|_| InvalidToken(error_info.clone()))?;
         
         tokens.push(Token::new(
             token_type,

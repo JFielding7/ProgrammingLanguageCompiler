@@ -3,7 +3,7 @@ use crate::error::compiler_error::Result;
 use crate::lexer::tokenizer::SourceLines;
 use crate::syntax::ast::ast_node::ASTNode::FunctionDef;
 use crate::syntax::ast::AST;
-use crate::syntax::parser::source_statements::{SourceStatements, SourceStatementsIter};
+use crate::syntax::parser::source_statements::SourceStatements;
 
 pub mod expression;
 mod sub_expression;

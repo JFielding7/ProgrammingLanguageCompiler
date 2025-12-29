@@ -12,10 +12,11 @@ pub fn parse_function_def(
 ) -> Result<FunctionDefNode> {
 
     let indent_size = statement.indent_size;
-    let mut tokens = StatementParser::new(&statement);
+    let mut statement_parser = StatementParser::new(&statement);
+    statement_parser.skip(2);
 
-    let name = parse_function_name(&mut tokens)?;
-    let params = parse_parameters(&mut tokens)?;
+    let name = parse_function_name(&mut statement_parser)?;
+    let params = parse_parameters(&mut statement_parser)?;
     let body = next_statements.ast_child_nodes(indent_size)?;
 
     Ok(FunctionDefNode::new(name, params, body))

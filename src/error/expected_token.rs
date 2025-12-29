@@ -3,28 +3,37 @@ use crate::error::error_info::ErrorInfo;
 use crate::lexer::token::{Token, TokenType};
 
 #[derive(Debug)]
-pub struct ExpectedToken {
+pub struct ExpectedTokenError {
     actual: Option<Token>,
     expected: TokenType,
-    error_info: Option<ErrorInfo>,
+    pub error_info: ErrorInfo,
 }
 
-impl ExpectedToken {
-    pub fn new(actual: Option<Token>, expected: TokenType) -> Self {
+impl ExpectedTokenError {
+    pub fn new(
+        actual: Option<Token>,
+        expected: TokenType,
+        error_info: ErrorInfo
+    ) -> Self {
         Self {
             actual,
             expected,
-            error_info: None,
+            error_info,
         }
-    }
-
-    pub fn attach_error_info(&mut self, error_info: ErrorInfo) {
-        self.error_info = Some(error_info);
     }
 }
 
-impl From<ExpectedToken> for Result<Token> {
-    fn from(expected: ExpectedToken) -> Self {
+impl std::fmt::Display for ExpectedTokenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.actual {
+            None => write!(f, "{} expected", self.expected),
+            Some(token) => write!(f, "expected {} but got {}", self.expected, token),
+        }
+    }
+}
+
+impl From<ExpectedTokenError> for Result<Token> {
+    fn from(expected: ExpectedTokenError) -> Self {
         Err(CompilerError::ExpectedToken(expected))
     }
 }

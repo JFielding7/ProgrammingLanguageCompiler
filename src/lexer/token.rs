@@ -1,11 +1,10 @@
-use std::cmp::PartialEq;
+use crate::error::compiler_error::Result;
+use crate::error::error_info::ErrorInfo;
 use logos::Logos;
+use std::cmp::PartialEq;
 use std::fmt;
 use std::mem::discriminant;
 use TokenType::*;
-use crate::error::compiler_error::Result;
-use crate::error::error_info::ErrorInfo;
-use crate::error::expected_token::ExpectedToken;
 
 #[derive(Debug, Clone)]
 pub struct Token {
