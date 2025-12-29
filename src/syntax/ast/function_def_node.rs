@@ -9,16 +9,12 @@ pub struct FunctionDefNode {
 }
 
 impl FunctionDefNode {
-    pub fn new(name: String, params: Vec<ParameterNode>) -> Self {
+    pub fn new(name: String, params: Vec<ParameterNode>, body: Vec<ASTNode>) -> Self {
         Self {
             name,
             params,
-            body: vec![]
+            body,
         }
-    }
-
-    pub fn append_to_body(&mut self, node: ASTNode) {
-        self.body.push(node);
     }
 }
 

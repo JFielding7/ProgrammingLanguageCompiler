@@ -8,6 +8,7 @@ use crate::syntax::ast::ast_node::ASTNode;
 use crate::syntax::ast::function_def_node::FunctionDefNode;
 
 
+#[derive(Debug)]
 pub struct AST {
     file_name: String,
     functions: Vec<FunctionDefNode>,

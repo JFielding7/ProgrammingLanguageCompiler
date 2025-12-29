@@ -4,8 +4,8 @@ use std::fmt;
 use std::mem::discriminant;
 use TokenType::*;
 use crate::error::compiler_error::Result;
-use crate::error::compiler_error::CompilerError::ExpectTokenNotFound;
-use crate::error::compiler_error::ErrorInfo;
+use crate::error::error_info::ErrorInfo;
+use crate::error::expected_token::ExpectedToken;
 
 #[derive(Debug, Clone)]
 pub struct Token {
@@ -68,7 +68,7 @@ impl Token {
     pub fn indent_size(&self) -> Result<usize> {
         match self.token_type {
             Indent(size) => Ok(size),
-            _ => Err(ExpectTokenNotFound(None, Indent(0)))
+            _ => panic!("Expected indent token")
         }
     }
 }
@@ -86,15 +86,21 @@ pub trait TokenOpt {
 impl TokenOpt for Option<Token> {
     fn assert_type(self, token_type: TokenType) -> Result<Token> {
         match self {
-            None => Err(ExpectTokenNotFound(None, token_type)),
+            None => ExpectedToken::new(None, token_type).into(),
             Some(token) => {
                 if token == token_type {
                     Ok(token)
                 } else {
-                    Err(ExpectTokenNotFound(Some(token), token_type))
+                    ExpectedToken::new(Some(token), token_type).into()
                 }
             }
         }
+    }
+}
+
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.token_str.as_str())
     }
 }
 

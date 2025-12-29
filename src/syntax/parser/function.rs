@@ -1,21 +1,27 @@
-use std::iter::{Peekable, Skip};
-use std::vec::IntoIter;
 use crate::error::compiler_error::Result;
-use crate::lexer::token::{Token, TokenOpt};
 use crate::lexer::token::TokenType::{CloseParen, Comma, Identifier, OpenParen};
+use crate::lexer::token::{Token, TokenOpt};
 use crate::syntax::ast::function_def_node::FunctionDefNode;
 use crate::syntax::ast::parameter_node::ParameterNode;
-use crate::syntax::parser::statement::Statement;
+use crate::syntax::parser::statement::{Statement, StatementIterMethods};
+use std::iter::{Peekable, Skip};
+use std::vec::IntoIter;
 
 type TokenIter = Peekable<Skip<IntoIter<Token>>>;
 
-pub fn parse_function_def(statement: Statement) -> Result<FunctionDefNode> {
+pub fn parse_function_def(
+    statement: Statement,
+    next_statements: &mut Peekable<IntoIter<Statement>>
+) -> Result<FunctionDefNode> {
+
+    let indent_size = statement.indent_size;
     let mut tokens = statement.into_iter().skip(2).peekable();
 
     let name = parse_function_name(&mut tokens)?;
     let params = parse_parameters(&mut tokens)?;
+    let body = next_statements.ast_child_nodes(indent_size)?;
 
-    Ok(FunctionDefNode::new(name, params))
+    Ok(FunctionDefNode::new(name, params, body))
 }
 
 fn parse_function_name(tokens: &mut TokenIter) -> Result<String> {

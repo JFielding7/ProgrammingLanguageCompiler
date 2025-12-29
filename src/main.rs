@@ -18,6 +18,8 @@ fn compile_program(args: Vec<String>) -> Result<()> {
 
     let ast: AST = tokens.try_into()?;
     
+    println!("{:?}", ast);
+    
     Ok(())
 }
 

@@ -1,11 +1,11 @@
 use crate::error::compiler_error::CompilerError::{InvalidIndent, InvalidToken};
-use crate::error::compiler_error::{ErrorInfo, Result};
+use crate::error::compiler_error::Result;
 use crate::lexer::token::TokenType::Indent;
 use crate::lexer::token::{Token, TokenType};
 use logos::Logos;
 use std::fs::File;
 use std::io::Read;
-
+use crate::error::error_info::ErrorInfo;
 
 type Line = Vec<Token>;
 
