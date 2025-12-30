@@ -38,19 +38,19 @@ impl Statement {
             unreachable!("Statement must not be blank")
         }
     }
-    
-    fn end_error_location(&self) -> SourceLocation {
-        let last_token_error_info = &self.tokens
+
+    fn end_location(&self) -> SourceLocation {
+        let last_token_location = &self.tokens
             .last()
             .expect("Statement must have at least one token")
-            .error_location;
+            .location;
 
         SourceLocation::new(
-            last_token_error_info.file_name.clone(),
-            last_token_error_info.line_content.clone(),
-            last_token_error_info.line_num,
-            last_token_error_info.end,
-            last_token_error_info.end + 1
+            last_token_location.file_name.clone(),
+            last_token_location.line_content.clone(),
+            last_token_location.line_num,
+            last_token_location.end,
+            last_token_location.end + 1
         )
     }
 }
@@ -81,7 +81,7 @@ impl<'a> StatementParser<'a> {
 
         if self.curr_token_index >= statement.len() {
             return Err(ExpectedTokenError::new(
-                None, token_type, statement.end_error_location()
+                None, token_type, statement.end_location()
             ).into())
         }
 
@@ -91,8 +91,8 @@ impl<'a> StatementParser<'a> {
         if token == token_type {
             Ok(token)
         } else {
-            let error_info = token.error_location.clone();
-            Err(ExpectedTokenError::new(Some(token), token_type, error_info).into())
+            let location = token.location.clone();
+            Err(ExpectedTokenError::new(Some(token), token_type, location).into())
         }
     }
 
@@ -102,7 +102,7 @@ impl<'a> StatementParser<'a> {
 
         if curr_token_index >= statement.len() {
             Err(ExpectedTokenError::new(
-                None, token_type, statement.end_error_location()
+                None, token_type, statement.end_location()
             ).into())
         } else {
             Ok(statement[curr_token_index] == token_type)

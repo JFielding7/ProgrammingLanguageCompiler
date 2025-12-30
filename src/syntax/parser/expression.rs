@@ -1,10 +1,13 @@
+use std::ops::Deref;
+use crate::error_util::SourceLocation;
 use crate::lexer::token::{Token, TokenType};
 use crate::lexer::token::TokenType::{Equals, CloseParen, Identifier, IntLiteral, Minus, OpenParen, Plus, StringLiteral, Star, Slash};
 use crate::syntax::ast::ast_node::ASTNode;
 use crate::syntax::ast::binary_operator_node::{BinaryOperatorNode, BinaryOperatorType};
 use crate::syntax::error::SyntaxError::InvalidExpression;
-use crate::syntax::error::SyntaxResult;
+use crate::syntax::error::{SyntaxError, SyntaxResult};
 use crate::syntax::error::unmatched_paren::UnmatchedParenError;
+use crate::syntax::parser::statement::Statement;
 
 const OPERATOR_GROUPS_COUNT: usize = 2;
 const OPERATORS: [&[TokenType]; OPERATOR_GROUPS_COUNT] = [
@@ -12,17 +15,23 @@ const OPERATORS: [&[TokenType]; OPERATOR_GROUPS_COUNT] = [
     &[Plus, Minus]
 ];
 
-pub struct ExpressionParser<'a> {
+
+
+struct ExpressionParser<'a> {
     tokens: &'a [Token],
+    start: usize,
+    end: usize,
     paren_matches: &'a Vec<usize>,
     start_op_group: usize,
 }
 
 impl <'a> ExpressionParser<'a> {
 
-    pub fn new(tokens: &'a [Token], paren_matches: &'a Vec<usize>) -> Self {
+    pub fn new(tokens: &'a [Token], start: usize, paren_matches: &'a Vec<usize>) -> Self {
         Self {
             tokens,
+            start,
+            end: tokens.len(),
             paren_matches,
             start_op_group: 0
         }
@@ -30,59 +39,60 @@ impl <'a> ExpressionParser<'a> {
 
     fn sub_expression(&'a self, start: usize, end: usize, start_op_group: usize) -> Self {
         Self {
-            tokens: &self.tokens[start..end],
+            tokens: self.tokens,
+            start,
+            end,
             paren_matches: self.paren_matches,
             start_op_group
         }
     }
 
     fn remove_redundant_parens(&mut self) {
-        let max_index = self.len() - 1;
-        let mut start = 0;
+        let prev_start = self.start;
 
-        while self.tokens[start] == OpenParen && self.tokens[max_index - start] == CloseParen {
-            start += 1;
+        while self.start < self.len() && self[self.start] == OpenParen && self[self.end - 1] == CloseParen {
+            self.start += 1;
+            self.end -= 1;
         }
 
-        if start != 0 {
-            self.tokens = &self.tokens[start..max_index - start + 1];
+        if self.start != prev_start {
             self.start_op_group = 0;
         }
     }
 
     pub fn parse(&mut self) -> SyntaxResult<ASTNode> {
+
         self.remove_redundant_parens();
 
-        let tokens_len = self.tokens.len();
-        // TODO: 0 length
-        if tokens_len == 0 {
-            panic!("Zero length expression not handled yet")
+        if self.start >= self.end {
+            return Err(self.empty_expression_error());
         }
 
-        if tokens_len == 1 {
-            return parse_value(&self.tokens[0]);
+        if self.start + 1 == self.end {
+            return parse_value(&self[self.start]);
         }
 
         while self.start_op_group < OPERATOR_GROUPS_COUNT {
-            let mut i = self.tokens.len() as isize - 1;
+            let start = self.start as isize;
+            let mut i = self.end as isize - 1;
 
-            while i >= 0 {
+            while i >= start {
                 let index = i  as usize;
 
-                if in_operator_group(self.start_op_group, &self.tokens[index]) {
-                    let op_token = &self.tokens[index];
+                if in_operator_group(self.start_op_group, &self[index]) {
 
                     let left_node = self
-                        .sub_expression(0, index, self.start_op_group)
+                        .sub_expression(self.start, index, self.start_op_group)
                         .parse()?;
 
                     let right_node = self
-                        .sub_expression(index + 1, self.len(), self.start_op_group)
+                        .sub_expression(index + 1, self.end, self.start_op_group + 1)
                         .parse()?;
 
+                    let op_token = &self[index];
                     return Ok(BinaryOperatorNode::new(op_token.into(), left_node, right_node).into());
                     
-                } else if self.tokens[index] == CloseParen {
+                } else if self[index] == CloseParen {
                     i = self.paren_matches[index] as isize;
                 } else {
                     i -= 1;
@@ -92,11 +102,25 @@ impl <'a> ExpressionParser<'a> {
             self.start_op_group += 1;
         }
 
-        Err(InvalidExpression(self.tokens[0].error_location.clone()))
+        Err(InvalidExpression(self[self.start].location.clone()))
     }
 
-    fn len(&self) -> usize {
-        self.tokens.len()
+    fn empty_expression_error(&self) -> SyntaxError {
+        InvalidExpression(
+            if self.start < self.len() {
+                self[self.start].location.clone()
+            } else {
+                self[self.start - 1].location.clone()
+            }
+        )
+    }
+}
+
+impl<'a> Deref for ExpressionParser<'a> {
+    type Target = [Token];
+
+    fn deref(&self) -> &Self::Target {
+        self.tokens
     }
 }
 
@@ -107,7 +131,7 @@ fn parse_value(token: &Token) -> SyntaxResult<ASTNode> {
         IntLiteral    => Ok(ASTNode::IntLiteral(token_string)),
         StringLiteral => Ok(ASTNode::StringLiteral(token_string)),
         Identifier    => Ok(ASTNode::Identifier(token_string)),
-        _ => Err(InvalidExpression(token.error_location.clone()))
+        _ => Err(InvalidExpression(token.location.clone()))
     }
 }
 
@@ -134,7 +158,7 @@ fn match_parens(expression: &[Token]) -> SyntaxResult<Vec<usize>> {
                 paren_matches[i] = j;
             } else {
                 return Err(UnmatchedParenError::new(
-                    CloseParen, token.error_location.clone()
+                    CloseParen, token.location.clone()
                 ).into());
             }
         }
@@ -142,18 +166,19 @@ fn match_parens(expression: &[Token]) -> SyntaxResult<Vec<usize>> {
 
     if let Some(j) = open_parens.pop() {
         return Err(UnmatchedParenError::new(
-            OpenParen, expression[j].error_location.clone()
+            OpenParen, expression[j].location.clone()
         ).into());
     }
 
     Ok(paren_matches)
 }
 
-pub fn parse_expression(tokens: &[Token]) -> SyntaxResult<ASTNode> {
+pub fn parse_expression(tokens: &[Token], start: usize) -> SyntaxResult<ASTNode> {
 
     ExpressionParser::new(
         tokens,
-        &match_parens(tokens)?,
+        start,
+        &match_parens(&tokens[start..])?,
     ).parse()
 }
 

@@ -7,7 +7,7 @@ use TokenType::*;
 pub struct Token {
     pub token_type: TokenType,
     pub token_str: String,
-    pub error_location: SourceLocation,
+    pub location: SourceLocation,
 }
 
 #[derive(Logos, Debug, Clone)]
@@ -57,8 +57,8 @@ pub enum TokenType {
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, token_str: String, error_info: SourceLocation) -> Self {
-        Self { token_type, token_str, error_location: error_info }
+    pub fn new(token_type: TokenType, token_str: String, location: SourceLocation) -> Self {
+        Self { token_type, token_str, location }
     }
 
     pub fn is_legal_statement_boundary(&self) -> bool {
