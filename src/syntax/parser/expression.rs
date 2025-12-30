@@ -61,13 +61,3 @@ impl<'a> ExpressionParser<'a> {
         Ok(paren_matches)
     }
 }
-
-impl From<&Token> for BinaryOperatorType {
-    fn from(op_token: &Token) -> Self {
-        match op_token.token_type {
-            Plus => BinaryOperatorType::Add,
-            Minus => BinaryOperatorType::Sub,
-            _ => panic!("Token is not a valid binary operator"),
-        }
-    }
-}

@@ -2,6 +2,7 @@ use crate::syntax::ast::ast_node::ASTNode;
 
 #[derive(Debug)]
 pub enum BinaryOperatorType {
+    Assign,
     Add,
     Sub,
     Mul,

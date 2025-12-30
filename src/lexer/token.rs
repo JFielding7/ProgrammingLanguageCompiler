@@ -20,7 +20,11 @@ pub enum TokenType {
     #[token("-")]
     Minus,
     #[token("=")]
-    Assign,
+    Equals,
+    #[token("*")]
+    Star,
+    #[token("/")]
+    Slash,
 
     #[regex(r"[0-9]+")]
     IntLiteral,
@@ -54,7 +58,7 @@ impl Token {
         match self.token_type {
             Plus |
             Minus |
-            Assign |
+            Equals |
             OpenParen |
             Comma => false,
             _ => true,

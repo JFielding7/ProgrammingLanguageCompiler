@@ -118,8 +118,4 @@ impl<'a> StatementParser<'a> {
     pub fn skip(&mut self, n: usize) {
         self.curr_token_index += n;
     }
-
-    pub fn is_next_token_of_type(&self, token_type: TokenType) -> bool {
-        self.statement[self.curr_token_index] == token_type
-    }
 }

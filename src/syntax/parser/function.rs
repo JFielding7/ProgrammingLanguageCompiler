@@ -37,7 +37,7 @@ fn parse_parameters(statement_parser: &mut StatementParser) -> SyntaxResult<Vec<
 
     params.push(parse_parameter(statement_parser)?);
 
-    while statement_parser.is_next_token_of_type(Comma) {
+    while statement_parser.cmp_next_token_type(Comma)? {
         params.push(parse_parameter(statement_parser)?);
     }
 

@@ -1,13 +1,13 @@
 use crate::lexer::token::{Token, TokenType};
-use crate::lexer::token::TokenType::{Assign, CloseParen, Identifier, IntLiteral, Minus, OpenParen, Plus, StringLiteral};
+use crate::lexer::token::TokenType::{Equals, CloseParen, Identifier, IntLiteral, Minus, OpenParen, Plus, StringLiteral, Star, Slash};
 use crate::syntax::ast::ast_node::ASTNode;
-use crate::syntax::ast::binary_operator_node::BinaryOperatorNode;
+use crate::syntax::ast::binary_operator_node::{BinaryOperatorNode, BinaryOperatorType};
 use crate::syntax::error::SyntaxError::InvalidExpression;
 use crate::syntax::error::SyntaxResult;
 
 const OPERATOR_GROUPS_COUNT: usize = 2;
 const OPERATORS: [&[TokenType]; OPERATOR_GROUPS_COUNT] = [
-    &[Assign],
+    &[Equals],
     &[Plus, Minus]
 ];
 
@@ -115,4 +115,17 @@ fn in_operator_group(op_group: usize, token: &Token) -> bool {
     }
 
     false
+}
+
+impl From<&Token> for BinaryOperatorType {
+    fn from(op_token: &Token) -> Self {
+        match op_token.token_type {
+            Equals => BinaryOperatorType::Assign,
+            Plus => BinaryOperatorType::Add,
+            Minus => BinaryOperatorType::Sub,
+            Star => BinaryOperatorType::Mul,
+            Slash => BinaryOperatorType::Div,
+            _ => panic!("Token is not a valid binary operator"),
+        }
+    }
 }
