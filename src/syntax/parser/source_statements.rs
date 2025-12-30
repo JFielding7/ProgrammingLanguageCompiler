@@ -1,11 +1,11 @@
+use crate::lexer::tokenizer::SourceLines;
+use crate::syntax::parser::statement::Statement;
 use std::iter::Peekable;
 use std::vec::IntoIter;
-use crate::lexer::tokenizer::SourceLines;
-use crate::syntax::ast::ast_node::ASTNode;
-use crate::syntax::error::SyntaxResult;
-use crate::syntax::parser::statement::Statement;
 
-pub struct SourceStatements(Vec<Statement>);
+pub struct SourceStatements {
+    statements: Vec<Statement>
+}
 
 impl From<SourceLines> for SourceStatements {
     fn from(source_lines: SourceLines) -> Self {
@@ -16,11 +16,11 @@ impl From<SourceLines> for SourceStatements {
         let mut legal_statement_end = false;
 
         for mut line in source_lines {
-            if line.len() <= 1 {
+            if line.len() <= Statement::INDEX_AFTER_INDENT {
                 continue;
             }
 
-            if legal_statement_end && line[1].is_legal_statement_boundary() {
+            if legal_statement_end && line[Statement::INDEX_AFTER_INDENT].is_legal_statement_boundary() {
                 statements.push(Statement::new(curr_statement_tokens));
 
                 curr_statement_tokens = line;
@@ -32,7 +32,7 @@ impl From<SourceLines> for SourceStatements {
                 if curr_statement_tokens.len() == 0 {
                     curr_statement_tokens.extend(line.drain(..));
                 } else {
-                    curr_statement_tokens.extend(line.drain(1..));
+                    curr_statement_tokens.extend(line.drain(Statement::INDEX_AFTER_INDENT..));
                 }
             }
         }
@@ -41,7 +41,7 @@ impl From<SourceLines> for SourceStatements {
             statements.push(Statement::new(curr_statement_tokens));
         }
 
-        Self(statements)
+        Self { statements }
     }
 }
 
@@ -50,27 +50,28 @@ impl IntoIterator for SourceStatements {
     type IntoIter = SourceStatementsIter;
     
     fn into_iter(self) -> Self::IntoIter {
-        SourceStatementsIter(self.0.into_iter().peekable())
+        SourceStatementsIter::new(self)
     }
 }
 
-pub struct SourceStatementsIter(Peekable<IntoIter<Statement>>);
+pub struct SourceStatementsIter {
+    iter: Peekable<IntoIter<Statement>>
+}
 
 impl SourceStatementsIter {
-    pub fn ast_child_nodes(&mut self, parent_indent_size: usize) -> SyntaxResult<Vec<ASTNode>> {
-        let mut child_nodes = Vec::new();
-
-        while let Some(child) = &mut self.0.peek() {
-
-            if child.indent_size <= parent_indent_size {
-                break;
-            }
-
-            let statement = self.0.next().unwrap();
-            child_nodes.push(statement.to_ast_node(self)?)
+    fn new(source_statements: SourceStatements) -> Self {
+        Self { 
+            iter: source_statements.statements.into_iter().peekable() 
         }
+    }
+    
+    pub fn next_is_child(&mut self, parent_indent_size: usize) -> bool {
 
-        Ok(child_nodes)
+        if let Some(child) = &mut self.iter.peek() {
+            child.indent_size > parent_indent_size
+        } else {
+            false
+        }
     }
 }
 
@@ -78,6 +79,6 @@ impl Iterator for SourceStatementsIter {
     type Item = Statement;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
+        self.iter.next()
     }
 }

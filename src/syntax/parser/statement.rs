@@ -1,11 +1,7 @@
 use std::ops::Index;
-use crate::lexer::token::TokenType::{Fn, Indent};
-use crate::lexer::token::{Token, TokenType};
-use crate::syntax::ast::ast_node::ASTNode;
-use crate::syntax::parser::expression::ExpressionParser;
-use crate::syntax::parser::function::parse_function_def;
-use crate::syntax::parser::source_statements::SourceStatementsIter;
 use crate::error_util::ErrorLocation;
+use crate::lexer::token::TokenType::Indent;
+use crate::lexer::token::{Token, TokenType};
 use crate::syntax::error::expected_token::ExpectedTokenError;
 use crate::syntax::error::SyntaxResult;
 
@@ -15,6 +11,8 @@ pub struct Statement {
 }
 
 impl Statement {
+    pub const INDEX_AFTER_INDENT: usize = 1;
+    
     pub fn new(tokens: Vec<Token>) -> Self {
         Self {
             indent_size: Self::indent_size(&tokens),
@@ -30,14 +28,6 @@ impl Statement {
         match first_token.token_type {
             Indent(size) => size,
             _ => unreachable!("Statement must start with Indent"),
-        }
-    }
-
-    pub fn to_ast_node(self, next_statements: &mut SourceStatementsIter) -> SyntaxResult<ASTNode> {
-
-        match self[1].token_type {
-            Fn => Ok(parse_function_def(self, next_statements)?.into()),
-            _ => ExpressionParser::parse(&self),
         }
     }
 

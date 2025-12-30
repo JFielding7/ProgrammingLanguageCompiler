@@ -1,32 +1,13 @@
 use crate::lexer::token::TokenType::{CloseParen, Comma, Identifier, OpenParen};
-use crate::syntax::ast::function_def_node::FunctionDefNode;
 use crate::syntax::ast::parameter_node::ParameterNode;
 use crate::syntax::error::SyntaxResult;
-use crate::syntax::parser::source_statements::SourceStatementsIter;
-use crate::syntax::parser::statement::{Statement, StatementParser};
+use crate::syntax::parser::statement::StatementParser;
 
-
-pub fn parse_function_def(
-    statement: Statement,
-    next_statements: &mut SourceStatementsIter
-) -> SyntaxResult<FunctionDefNode> {
-
-    let indent_size = statement.indent_size;
-    let mut statement_parser = StatementParser::new(&statement);
-    statement_parser.skip(2);
-
-    let name = parse_function_name(&mut statement_parser)?;
-    let params = parse_parameters(&mut statement_parser)?;
-    let body = next_statements.ast_child_nodes(indent_size)?;
-
-    Ok(FunctionDefNode::new(name, params, body))
-}
-
-fn parse_function_name(statement_parser: &mut StatementParser) -> SyntaxResult<String> {
+pub fn parse_function_name(statement_parser: &mut StatementParser) -> SyntaxResult<String> {
     statement_parser.next_token_of_type(Identifier).map(|token| token.token_str)
 }
 
-fn parse_parameters(statement_parser: &mut StatementParser) -> SyntaxResult<Vec<ParameterNode>> {
+pub fn parse_parameters(statement_parser: &mut StatementParser) -> SyntaxResult<Vec<ParameterNode>> {
     statement_parser.next_token_of_type(OpenParen)?;
 
     let mut params = Vec::new();

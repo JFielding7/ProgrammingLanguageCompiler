@@ -1,7 +1,6 @@
 use crate::lexer::token::Token;
 use crate::lexer::token::TokenType::*;
 use crate::syntax::ast::ast_node::ASTNode;
-use crate::syntax::ast::binary_operator_node::BinaryOperatorType;
 use crate::syntax::error::unmatched_paren::UnmatchedParenError;
 use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::statement::Statement;
@@ -15,7 +14,7 @@ pub struct ExpressionParser<'a> {
 impl<'a> ExpressionParser<'a> {
     pub fn parse(statement: &'a Statement) -> SyntaxResult<ASTNode> {
 
-        let parser = Self::new(&statement.tokens[1..])?;
+        let parser = Self::new(&statement.tokens[Statement::INDEX_AFTER_INDENT..])?;
 
         SubExpressionParser::new(
             &parser.tokens,
