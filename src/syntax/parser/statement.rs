@@ -1,12 +1,13 @@
-use crate::error::compiler_error::Result;
-use crate::error::expected_token::ExpectedTokenError;
-use crate::lexer::token::TokenType::Fn;
+use std::ops::Index;
+use crate::lexer::token::TokenType::{Fn, Indent};
 use crate::lexer::token::{Token, TokenType};
 use crate::syntax::ast::ast_node::ASTNode;
 use crate::syntax::parser::expression::ExpressionParser;
 use crate::syntax::parser::function::parse_function_def;
 use crate::syntax::parser::source_statements::SourceStatementsIter;
-use std::ops::Index;
+use crate::error_util::ErrorLocation;
+use crate::syntax::error::expected_token::ExpectedTokenError;
+use crate::syntax::error::SyntaxResult;
 
 pub struct Statement {
     pub indent_size: usize,
@@ -22,13 +23,17 @@ impl Statement {
     }
 
     fn indent_size(tokens: &Vec<Token>) -> usize {
-        tokens.first()
-            .expect("Statement must have at least one token")
-            .indent_size()
-            .expect("First token must be indent")
+        let first_token = tokens
+            .first()
+            .expect("Statement must have at least one token");
+
+        match first_token.token_type {
+            Indent(size) => size,
+            _ => unreachable!("Statement must start with Indent"),
+        }
     }
 
-    pub fn to_ast_node(self, next_statements: &mut SourceStatementsIter) -> Result<ASTNode> {
+    pub fn to_ast_node(self, next_statements: &mut SourceStatementsIter) -> SyntaxResult<ASTNode> {
 
         match self[1].token_type {
             Fn => Ok(parse_function_def(self, next_statements)?.into()),
@@ -38,6 +43,21 @@ impl Statement {
 
     pub fn len(&self) -> usize {
         self.tokens.len()
+    }
+
+    fn end_error_location(&self) -> ErrorLocation {
+        let last_token_error_info = &self.tokens
+            .last()
+            .expect("Statement must have at least one token")
+            .error_location;
+
+        ErrorLocation::new(
+            last_token_error_info.file_name.clone(),
+            last_token_error_info.line_content.clone(),
+            last_token_error_info.line_num,
+            last_token_error_info.end,
+            last_token_error_info.end + 1
+        )
     }
 }
 
@@ -62,13 +82,13 @@ impl<'a> StatementParser<'a> {
         }
     }
 
-    pub fn next_token_of_type(&mut self, token_type: TokenType) -> Result<Token> {
+    pub fn next_token_of_type(&mut self, token_type: TokenType) -> SyntaxResult<Token> {
         let statement = self.statement;
 
         if self.curr_token_index >= statement.len() {
-            return ExpectedTokenError::new(
-                None, token_type, statement[statement.len() - 1].error_info.clone()
-            ).into()
+            return Err(ExpectedTokenError::new(
+                None, token_type, statement.end_error_location()
+            ).into())
         }
 
         let token = statement[self.curr_token_index].clone();
@@ -77,19 +97,21 @@ impl<'a> StatementParser<'a> {
         if token == token_type {
             Ok(token)
         } else {
-            let error_info = token.error_info.clone();
-            ExpectedTokenError::new(Some(token), token_type, error_info).into()
+            let error_info = token.error_location.clone();
+            Err(ExpectedTokenError::new(Some(token), token_type, error_info).into())
         }
     }
 
-    pub fn peek(&self) -> Option<&Token> {
+    pub fn cmp_next_token_type(&self, token_type: TokenType) -> SyntaxResult<bool> {
         let curr_token_index = self.curr_token_index;
         let statement = self.statement;
 
         if curr_token_index >= statement.len() {
-            None
+            Err(ExpectedTokenError::new(
+                None, token_type, statement.end_error_location()
+            ).into())
         } else {
-            Some(&statement[curr_token_index])
+            Ok(statement[curr_token_index] == token_type)
         }
     }
 

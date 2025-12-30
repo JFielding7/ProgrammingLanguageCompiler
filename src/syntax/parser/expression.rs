@@ -1,9 +1,9 @@
-use crate::error::compiler_error::Result;
-use crate::error::compiler_error::CompilerError::UnmatchedParen;
-use crate::lexer::token::TokenType::*;
 use crate::lexer::token::Token;
+use crate::lexer::token::TokenType::*;
 use crate::syntax::ast::ast_node::ASTNode;
 use crate::syntax::ast::binary_operator_node::BinaryOperatorType;
+use crate::syntax::error::unmatched_paren::UnmatchedParenError;
+use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::statement::Statement;
 use crate::syntax::parser::sub_expression::SubExpressionParser;
 
@@ -13,7 +13,7 @@ pub struct ExpressionParser<'a> {
 }
 
 impl<'a> ExpressionParser<'a> {
-    pub fn parse(statement: &'a Statement) -> Result<ASTNode> {
+    pub fn parse(statement: &'a Statement) -> SyntaxResult<ASTNode> {
 
         let parser = Self::new(&statement.tokens[1..])?;
 
@@ -23,7 +23,7 @@ impl<'a> ExpressionParser<'a> {
         ).parse()
     }
     
-    fn new(tokens: &'a [Token]) -> Result<Self> {
+    fn new(tokens: &'a [Token]) -> SyntaxResult<Self> {
 
         let paren_matches = Self::match_parens(tokens)?;
 
@@ -33,7 +33,7 @@ impl<'a> ExpressionParser<'a> {
         })
     }
 
-    fn match_parens(expression: &'a [Token]) -> Result<Vec<usize>> {
+    fn match_parens(expression: &'a [Token]) -> SyntaxResult<Vec<usize>> {
 
         let mut paren_matches = vec![0; expression.len()];
         let mut open_parens = Vec::new();
@@ -45,13 +45,17 @@ impl<'a> ExpressionParser<'a> {
                 if let Some(j) = open_parens.pop() {
                     paren_matches[i] = j;
                 } else {
-                    return Err(UnmatchedParen(token.error_info.clone()));
+                    return Err(UnmatchedParenError::new(
+                        CloseParen, token.error_location.clone()
+                    ).into());
                 }
             }
         }
 
         if let Some(j) = open_parens.pop() {
-            return Err(UnmatchedParen(expression[j].error_info.clone()));
+            return Err(UnmatchedParenError::new(
+                OpenParen, expression[j].error_location.clone()
+            ).into());
         }
 
         Ok(paren_matches)
@@ -63,7 +67,7 @@ impl From<&Token> for BinaryOperatorType {
         match op_token.token_type {
             Plus => BinaryOperatorType::Add,
             Minus => BinaryOperatorType::Sub,
-            _ => BinaryOperatorType::Mul, // TODO
+            _ => panic!("Token is not a valid binary operator"),
         }
     }
 }

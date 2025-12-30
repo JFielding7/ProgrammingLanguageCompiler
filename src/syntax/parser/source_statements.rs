@@ -1,8 +1,8 @@
 use std::iter::Peekable;
 use std::vec::IntoIter;
-use crate::error::compiler_error::Result;
 use crate::lexer::tokenizer::SourceLines;
 use crate::syntax::ast::ast_node::ASTNode;
+use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::statement::Statement;
 
 pub struct SourceStatements(Vec<Statement>);
@@ -57,7 +57,7 @@ impl IntoIterator for SourceStatements {
 pub struct SourceStatementsIter(Peekable<IntoIter<Statement>>);
 
 impl SourceStatementsIter {
-    pub fn ast_child_nodes(&mut self, parent_indent_size: usize) -> Result<Vec<ASTNode>> {
+    pub fn ast_child_nodes(&mut self, parent_indent_size: usize) -> SyntaxResult<Vec<ASTNode>> {
         let mut child_nodes = Vec::new();
 
         while let Some(child) = &mut self.0.peek() {

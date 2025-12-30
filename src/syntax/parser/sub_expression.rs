@@ -1,10 +1,9 @@
-use crate::error::compiler_error::Result;
-use crate::error::compiler_error::CompilerError::InvalidExpression;
 use crate::lexer::token::{Token, TokenType};
 use crate::lexer::token::TokenType::{Assign, CloseParen, Identifier, IntLiteral, Minus, OpenParen, Plus, StringLiteral};
 use crate::syntax::ast::ast_node::ASTNode;
 use crate::syntax::ast::binary_operator_node::BinaryOperatorNode;
-
+use crate::syntax::error::SyntaxError::InvalidExpression;
+use crate::syntax::error::SyntaxResult;
 
 const OPERATOR_GROUPS_COUNT: usize = 2;
 const OPERATORS: [&[TokenType]; OPERATOR_GROUPS_COUNT] = [
@@ -50,7 +49,7 @@ impl <'a> SubExpressionParser<'a> {
         }
     }
 
-    pub fn parse(&mut self) -> Result<ASTNode> {
+    pub fn parse(&mut self) -> SyntaxResult<ASTNode> {
         self.remove_redundant_parens();
 
         let tokens_len = self.tokens.len();
@@ -89,7 +88,7 @@ impl <'a> SubExpressionParser<'a> {
             self.start_op_group += 1;
         }
 
-        Err(InvalidExpression(self.tokens[0].error_info.clone()))
+        Err(InvalidExpression(self.tokens[0].error_location.clone()))
     }
 
     fn len(&self) -> usize {
@@ -97,14 +96,14 @@ impl <'a> SubExpressionParser<'a> {
     }
 }
 
-fn parse_value(token: &Token) -> Result<ASTNode> {
+fn parse_value(token: &Token) -> SyntaxResult<ASTNode> {
     let token_string = token.token_str.clone();
 
     match token.token_type {
         IntLiteral    => Ok(ASTNode::IntLiteral(token_string)),
         StringLiteral => Ok(ASTNode::StringLiteral(token_string)),
         Identifier    => Ok(ASTNode::Identifier(token_string)),
-        _ => Err(InvalidExpression(token.error_info.clone()))
+        _ => Err(InvalidExpression(token.error_location.clone()))
     }
 }
 

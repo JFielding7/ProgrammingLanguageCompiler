@@ -1,8 +1,7 @@
-use crate::error::compiler_error::CompilerError;
-use crate::error::compiler_error::Result;
 use crate::lexer::tokenizer::SourceLines;
 use crate::syntax::ast::ast_node::ASTNode::FunctionDef;
 use crate::syntax::ast::AST;
+use crate::syntax::error::{SyntaxError, SyntaxResult};
 use crate::syntax::parser::source_statements::SourceStatements;
 
 pub mod expression;
@@ -12,9 +11,9 @@ mod function;
 mod source_statements;
 
 impl TryFrom<SourceLines> for AST {
-    type Error = CompilerError;
+    type Error = SyntaxError;
 
-    fn try_from(source_lines: SourceLines) -> Result<Self> {
+    fn try_from(source_lines: SourceLines) -> SyntaxResult<Self> {
 
         let statements: SourceStatements = source_lines.into();
 

@@ -1,7 +1,7 @@
-use crate::error::compiler_error::Result;
 use crate::lexer::token::TokenType::{CloseParen, Comma, Identifier, OpenParen};
 use crate::syntax::ast::function_def_node::FunctionDefNode;
 use crate::syntax::ast::parameter_node::ParameterNode;
+use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::source_statements::SourceStatementsIter;
 use crate::syntax::parser::statement::{Statement, StatementParser};
 
@@ -9,7 +9,7 @@ use crate::syntax::parser::statement::{Statement, StatementParser};
 pub fn parse_function_def(
     statement: Statement,
     next_statements: &mut SourceStatementsIter
-) -> Result<FunctionDefNode> {
+) -> SyntaxResult<FunctionDefNode> {
 
     let indent_size = statement.indent_size;
     let mut statement_parser = StatementParser::new(&statement);
@@ -22,19 +22,17 @@ pub fn parse_function_def(
     Ok(FunctionDefNode::new(name, params, body))
 }
 
-fn parse_function_name(statement_parser: &mut StatementParser) -> Result<String> {
+fn parse_function_name(statement_parser: &mut StatementParser) -> SyntaxResult<String> {
     statement_parser.next_token_of_type(Identifier).map(|token| token.token_str)
 }
 
-fn parse_parameters(statement_parser: &mut StatementParser) -> Result<Vec<ParameterNode>> {
+fn parse_parameters(statement_parser: &mut StatementParser) -> SyntaxResult<Vec<ParameterNode>> {
     statement_parser.next_token_of_type(OpenParen)?;
 
     let mut params = Vec::new();
 
-    if let Some(token) = statement_parser.peek() {
-        if *token == CloseParen {
-            return Ok(params);
-        }
+    if statement_parser.cmp_next_token_type(CloseParen)? {
+        return Ok(params);
     }
 
     params.push(parse_parameter(statement_parser)?);
@@ -48,7 +46,7 @@ fn parse_parameters(statement_parser: &mut StatementParser) -> Result<Vec<Parame
     Ok(params)
 }
 
-fn parse_parameter(statement_parser: &mut StatementParser) -> Result<ParameterNode> {
+fn parse_parameter(statement_parser: &mut StatementParser) -> SyntaxResult<ParameterNode> {
     let param_type = statement_parser.next_token_of_type(Identifier)?.token_str;
     let param_name = statement_parser.next_token_of_type(Identifier)?.token_str;
 
