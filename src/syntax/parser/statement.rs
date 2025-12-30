@@ -1,9 +1,9 @@
-use std::ops::Index;
-use crate::error_util::ErrorLocation;
+use crate::error_util::SourceLocation;
 use crate::lexer::token::TokenType::Indent;
 use crate::lexer::token::{Token, TokenType};
 use crate::syntax::error::expected_token::ExpectedTokenError;
 use crate::syntax::error::SyntaxResult;
+use std::ops::Deref;
 
 pub struct Statement {
     pub indent_size: usize,
@@ -31,17 +31,21 @@ impl Statement {
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.tokens.len()
+    pub fn starts_with(&self, token_type: TokenType) -> bool {
+        if self.len() > 1 {
+            self[1] == token_type
+        } else {
+            unreachable!("Statement must not be blank")
+        }
     }
-
-    fn end_error_location(&self) -> ErrorLocation {
+    
+    fn end_error_location(&self) -> SourceLocation {
         let last_token_error_info = &self.tokens
             .last()
             .expect("Statement must have at least one token")
             .error_location;
 
-        ErrorLocation::new(
+        SourceLocation::new(
             last_token_error_info.file_name.clone(),
             last_token_error_info.line_content.clone(),
             last_token_error_info.line_num,
@@ -51,11 +55,11 @@ impl Statement {
     }
 }
 
-impl Index<usize> for Statement {
-    type Output = Token;
+impl Deref for Statement {
+    type Target = [Token];
 
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.tokens[index]
+    fn deref(&self) -> &Self::Target {
+        &self.tokens
     }
 }
 

@@ -1,19 +1,19 @@
 use thiserror::Error;
-use crate::error_util::ErrorLocation;
+use crate::error_util::SourceLocation;
 use crate::lexer::token::{Token, TokenType};
 
 #[derive(Debug, Error)]
 pub struct ExpectedTokenError {
     actual: Option<Token>,
     expected: TokenType,
-    error_location: ErrorLocation,
+    error_location: SourceLocation,
 }
 
 impl ExpectedTokenError {
     pub fn new(
         actual: Option<Token>,
         expected: TokenType,
-        error_location: ErrorLocation
+        error_location: SourceLocation
     ) -> Self {
         Self {
             actual,

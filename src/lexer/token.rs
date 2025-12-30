@@ -1,19 +1,26 @@
 use std::mem::discriminant;
 use logos::Logos;
-use crate::error_util::ErrorLocation;
+use crate::error_util::SourceLocation;
 use TokenType::*;
 
 #[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub token_str: String,
-    pub error_location: ErrorLocation,
+    pub error_location: SourceLocation,
 }
 
 #[derive(Logos, Debug, Clone)]
 pub enum TokenType {
     #[token("fn")]
     Fn,
+
+    #[token("if")]
+    If,
+    #[token("elif")]
+    Elif,
+    #[token("else")]
+    Else,
 
     #[token("+")]
     Plus,
@@ -50,7 +57,7 @@ pub enum TokenType {
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, token_str: String, error_info: ErrorLocation) -> Self {
+    pub fn new(token_type: TokenType, token_str: String, error_info: SourceLocation) -> Self {
         Self { token_type, token_str, error_location: error_info }
     }
 

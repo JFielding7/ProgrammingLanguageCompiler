@@ -1,14 +1,14 @@
 use thiserror::Error;
-use crate::error_util::ErrorLocation;
+use crate::error_util::SourceLocation;
 
 #[derive(Debug, Error)]
 pub struct UnalignedIndentError {
     indent_size: usize,
-    error_location: ErrorLocation,
+    error_location: SourceLocation,
 }
 
 impl UnalignedIndentError {
-    pub fn new(indent_size: usize, error_location: ErrorLocation) -> Self {
+    pub fn new(indent_size: usize, error_location: SourceLocation) -> Self {
         Self {
             indent_size,
             error_location,

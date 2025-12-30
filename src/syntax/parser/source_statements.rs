@@ -2,6 +2,7 @@ use crate::lexer::tokenizer::SourceLines;
 use crate::syntax::parser::statement::Statement;
 use std::iter::Peekable;
 use std::vec::IntoIter;
+use crate::lexer::token::TokenType;
 
 pub struct SourceStatements {
     statements: Vec<Statement>
@@ -69,6 +70,14 @@ impl SourceStatementsIter {
 
         if let Some(child) = &mut self.iter.peek() {
             child.indent_size > parent_indent_size
+        } else {
+            false
+        }
+    }
+
+    pub fn next_starts_with(&mut self, token_type: TokenType) -> bool {
+        if let Some(statement) = self.iter.peek() {
+            statement.starts_with(token_type)
         } else {
             false
         }

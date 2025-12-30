@@ -1,17 +1,17 @@
 use thiserror::Error;
-use crate::error_util::ErrorLocation;
+use crate::error_util::SourceLocation;
 use crate::lexer::token::TokenType;
 
 #[derive(Debug, Error)]
 pub struct UnmatchedParenError {
     paren_type: TokenType,
-    error_location: ErrorLocation,
+    error_location: SourceLocation,
 }
 
 impl UnmatchedParenError {
     pub fn new(
         paren_type: TokenType,
-        error_location: ErrorLocation,
+        error_location: SourceLocation,
     ) -> Self {
         Self {
             paren_type,

@@ -1,4 +1,4 @@
-use crate::error_util::ErrorLocation;
+use crate::error_util::SourceLocation;
 use crate::syntax::error::expected_token::ExpectedTokenError;
 use crate::syntax::error::unmatched_paren::UnmatchedParenError;
 
@@ -14,8 +14,8 @@ pub enum SyntaxError {
     #[error("Error: {0}")]
     UnmatchedParen(#[from] UnmatchedParenError),
 
-    #[error("Error: {0}")]
-    InvalidExpression(ErrorLocation),
+    #[error("Error: Invalid Expression\n{0}")]
+    InvalidExpression(SourceLocation),
 }
 
 pub type SyntaxResult<T> = Result<T, SyntaxError>;

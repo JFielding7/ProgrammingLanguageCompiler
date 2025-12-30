@@ -1,17 +1,17 @@
-use crate::lexer::token::TokenType::Fn;
+use crate::lexer::token::TokenType::*;
 use crate::lexer::tokenizer::SourceLines;
-use crate::syntax::ast::ast_node::ASTNode::FunctionDef;
-use crate::syntax::ast::AST;
 use crate::syntax::ast::ast_node::ASTNode;
+use crate::syntax::ast::ast_node::ASTNode::FunctionDef;
 use crate::syntax::ast::function_def_node::FunctionDefNode;
+use crate::syntax::ast::if_node::{ConditionBlock, IfNode};
+use crate::syntax::ast::AST;
 use crate::syntax::error::{SyntaxError, SyntaxResult};
-use crate::syntax::parser::expression::ExpressionParser;
+use crate::syntax::parser::expression::parse_expression;
 use crate::syntax::parser::function_signature::{parse_function_name, parse_parameters};
 use crate::syntax::parser::source_statements::{SourceStatements, SourceStatementsIter};
 use crate::syntax::parser::statement::{Statement, StatementParser};
 
-pub mod expression;
-mod sub_expression;
+mod expression;
 pub mod statement;
 mod function_signature;
 mod source_statements;
@@ -52,6 +52,18 @@ impl Parser {
         }
     }
 
+    fn parse_children(&mut self, statement: &Statement) -> SyntaxResult<Vec<ASTNode>> {
+        let mut children = Vec::new();
+
+        while self.source_statements_iter.next_is_child(statement.indent_size) {
+            if let Some(child) = self.next_ast_node()? {
+                children.push(child);
+            }
+        }
+
+        Ok(children)
+    }
+
     fn parse_function(
         &mut self,
         statement: Statement,
@@ -63,15 +75,41 @@ impl Parser {
 
         let name = parse_function_name(&mut statement_parser)?;
         let params = parse_parameters(&mut statement_parser)?;
-        let mut body = vec![];
-        
-        while self.source_statements_iter.next_is_child(statement.indent_size) {
-            if let Some(child) = self.next_ast_node()? {
-                body.push(child);
-            }
-        }
+        let body = self.parse_children(&statement)?;
 
         Ok(FunctionDefNode::new(name, params, body))
+    }
+
+    fn parse_if_statement(&mut self, statement: Statement) -> SyntaxResult<IfNode> {
+        const TOKENS_BEFORE_COND: usize = 2;
+
+        let if_cond = parse_expression(&statement.tokens[TOKENS_BEFORE_COND..])?;
+        let if_body = self.parse_children(&statement)?;
+
+        let mut condition_blocks = vec![ConditionBlock::new(if_cond, if_body)];
+
+        while self.source_statements_iter.next_starts_with(Elif) {
+            let statement = self.source_statements_iter
+                .next()
+                .expect("Statement Expected");
+
+            let elif_cond = parse_expression(&statement.tokens[TOKENS_BEFORE_COND..])?;
+            let elif_body = self.parse_children(&statement)?;
+
+            condition_blocks.push(ConditionBlock::new(elif_cond, elif_body));
+        }
+
+        let else_body = if self.source_statements_iter.next_starts_with(Else) {
+            let statement = self.source_statements_iter
+                .next()
+                .expect("Statement Expected");
+
+            Some(self.parse_children(&statement)?)
+        } else {
+            None
+        };
+
+        Ok(IfNode::new(condition_blocks, else_body))
     }
     
     fn next_ast_node(&mut self) -> SyntaxResult<Option<ASTNode>> {
@@ -82,7 +120,8 @@ impl Parser {
 
             match statement[Statement::INDEX_AFTER_INDENT].token_type {
                 Fn => Ok(Some(self.parse_function(statement)?.into())),
-                _ => Ok(Some(ExpressionParser::parse(&statement)?)),
+                If => Ok(Some(self.parse_if_statement(statement)?.into())),
+                _ => Ok(Some(parse_expression(&statement[Statement::INDEX_AFTER_INDENT..])?)),
             }
         } else {
             Ok(None)

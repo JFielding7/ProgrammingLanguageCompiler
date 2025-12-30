@@ -1,7 +1,7 @@
 use logos::Logos;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use crate::error_util::ErrorLocation;
+use crate::error_util::SourceLocation;
 use crate::lexer::error::invalid_token::InvalidTokenError;
 use crate::lexer::error::unaligned_indent::UnalignedIndentError;
 use crate::lexer::error::{LexerError, LexerResult};
@@ -39,7 +39,7 @@ fn get_indent_token(path_buf: Rc<PathBuf>, line_content: Rc<String>, line_num: u
 
     let indent = line_content.chars().take_while(|&c| c == ' ').collect::<String>();
     let indent_spaces = indent.len();
-    let error_location = ErrorLocation::new(path_buf, line_content, line_num, 0, indent_spaces);
+    let error_location = SourceLocation::new(path_buf, line_content, line_num, 0, indent_spaces);
 
     if (indent_spaces % INDENT_SIZE) != 0 {
         Err(UnalignedIndentError::new(indent_spaces, error_location).into())
@@ -66,7 +66,7 @@ fn tokenize_line(path: &Path, line_num: usize, line_content: Rc<String>) -> Lexe
         let span = lexer.span();
         let string = lexer.slice().to_string();
 
-        let error_location = ErrorLocation::new(
+        let error_location = SourceLocation::new(
             path_buf.clone(), line_content.clone(), line_num, span.start, span.end
         );
 

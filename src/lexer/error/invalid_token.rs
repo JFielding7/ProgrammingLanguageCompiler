@@ -1,14 +1,14 @@
 use thiserror::Error;
-use crate::error_util::ErrorLocation;
+use crate::error_util::SourceLocation;
 
 #[derive(Debug, Error)]
 pub struct InvalidTokenError {
     invalid_token_string: String,
-    error_location: ErrorLocation,
+    error_location: SourceLocation,
 }
 
 impl InvalidTokenError {
-    pub fn new(invalid_token_string: String, error_location: ErrorLocation) -> Self {
+    pub fn new(invalid_token_string: String, error_location: SourceLocation) -> Self {
         Self {
             invalid_token_string,
             error_location,

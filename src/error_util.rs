@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
-pub struct ErrorLocation {
+pub struct SourceLocation {
     pub file_name: Rc<PathBuf>,
     pub line_content: Rc<String>,
     pub line_num: usize,
@@ -10,7 +10,7 @@ pub struct ErrorLocation {
     pub end: usize,
 }
 
-impl ErrorLocation {
+impl SourceLocation {
     pub fn new(
         file_name: Rc<PathBuf>,
         line_content: Rc<String>,
@@ -28,7 +28,7 @@ impl ErrorLocation {
     }
 }
 
-impl std::fmt::Display for ErrorLocation {
+impl std::fmt::Display for SourceLocation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let span_length = self.end - self.start;
         let line_num = self.line_num.to_string();
