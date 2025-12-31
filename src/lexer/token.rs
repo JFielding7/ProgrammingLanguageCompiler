@@ -22,6 +22,11 @@ pub enum TokenType {
     #[token("else")]
     Else,
 
+    #[token("for")]
+    For,
+    #[token("while")]
+    While,
+
     #[token("+")]
     Plus,
     #[token("-")]
@@ -32,6 +37,8 @@ pub enum TokenType {
     Star,
     #[token("/")]
     Slash,
+    #[token("%")]
+    Percent,
 
     #[regex(r"[0-9]+")]
     IntLiteral,

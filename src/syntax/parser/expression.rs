@@ -1,28 +1,20 @@
-use std::ops::Deref;
-use crate::error_util::SourceLocation;
-use crate::lexer::token::{Token, TokenType};
-use crate::lexer::token::TokenType::{Equals, CloseParen, Identifier, IntLiteral, Minus, OpenParen, Plus, StringLiteral, Star, Slash};
+use crate::lexer::token::TokenType::*;
+use crate::lexer::token::Token;
 use crate::syntax::ast::ast_node::ASTNode;
 use crate::syntax::ast::binary_operator_node::{BinaryOperatorNode, BinaryOperatorType};
+use crate::syntax::error::unmatched_paren::UnmatchedParenError;
 use crate::syntax::error::SyntaxError::InvalidExpression;
 use crate::syntax::error::{SyntaxError, SyntaxResult};
-use crate::syntax::error::unmatched_paren::UnmatchedParenError;
-use crate::syntax::parser::statement::Statement;
-
-const OPERATOR_GROUPS_COUNT: usize = 2;
-const OPERATORS: [&[TokenType]; OPERATOR_GROUPS_COUNT] = [
-    &[Equals],
-    &[Plus, Minus]
-];
-
-
+use std::ops::Deref;
+use crate::syntax::parser::precedence::{BinaryOperatorGroup, BinaryOperatorGroupIterator};
+use crate::syntax::ast::binary_operator_node::BinaryOperatorType::*;
 
 struct ExpressionParser<'a> {
     tokens: &'a [Token],
     start: usize,
     end: usize,
     paren_matches: &'a Vec<usize>,
-    start_op_group: usize,
+    start_op_group: Option<BinaryOperatorGroup>,
 }
 
 impl <'a> ExpressionParser<'a> {
@@ -33,17 +25,17 @@ impl <'a> ExpressionParser<'a> {
             start,
             end: tokens.len(),
             paren_matches,
-            start_op_group: 0
+            start_op_group: Some(BinaryOperatorGroup::lowest_precedence()),
         }
     }
 
-    fn sub_expression(&'a self, start: usize, end: usize, start_op_group: usize) -> Self {
+    fn sub_expression(&'a self, start: usize, end: usize, curr_op_group: Option<BinaryOperatorGroup>) -> Self {
         Self {
             tokens: self.tokens,
             start,
             end,
             paren_matches: self.paren_matches,
-            start_op_group
+            start_op_group: curr_op_group,
         }
     }
 
@@ -56,7 +48,7 @@ impl <'a> ExpressionParser<'a> {
         }
 
         if self.start != prev_start {
-            self.start_op_group = 0;
+            self.start_op_group = Some(BinaryOperatorGroup::lowest_precedence());
         }
     }
 
@@ -72,21 +64,21 @@ impl <'a> ExpressionParser<'a> {
             return parse_value(&self[self.start]);
         }
 
-        while self.start_op_group < OPERATOR_GROUPS_COUNT {
+        for group in BinaryOperatorGroupIterator::starting_with(self.start_op_group) {
             let start = self.start as isize;
             let mut i = self.end as isize - 1;
 
             while i >= start {
                 let index = i  as usize;
 
-                if in_operator_group(self.start_op_group, &self[index]) {
+                if group.contains(&self[index]) {
 
                     let left_node = self
-                        .sub_expression(self.start, index, self.start_op_group)
+                        .sub_expression(self.start, index, Some(group))
                         .parse()?;
 
                     let right_node = self
-                        .sub_expression(index + 1, self.end, self.start_op_group + 1)
+                        .sub_expression(index + 1, self.end, group.next_lowest_precedence_group())
                         .parse()?;
 
                     let op_token = &self[index];
@@ -98,8 +90,6 @@ impl <'a> ExpressionParser<'a> {
                     i -= 1;
                 }
             }
-
-            self.start_op_group += 1;
         }
 
         Err(InvalidExpression(self[self.start].location.clone()))
@@ -133,16 +123,6 @@ fn parse_value(token: &Token) -> SyntaxResult<ASTNode> {
         Identifier    => Ok(ASTNode::Identifier(token_string)),
         _ => Err(InvalidExpression(token.location.clone()))
     }
-}
-
-fn in_operator_group(op_group: usize, token: &Token) -> bool {
-    for token_type in OPERATORS[op_group] {
-        if token == token_type {
-            return true;
-        }
-    }
-
-    false
 }
 
 fn match_parens(expression: &[Token]) -> SyntaxResult<Vec<usize>> {
@@ -185,11 +165,12 @@ pub fn parse_expression(tokens: &[Token], start: usize) -> SyntaxResult<ASTNode>
 impl From<&Token> for BinaryOperatorType {
     fn from(op_token: &Token) -> Self {
         match op_token.token_type {
-            Equals => BinaryOperatorType::Assign,
-            Plus => BinaryOperatorType::Add,
-            Minus => BinaryOperatorType::Sub,
-            Star => BinaryOperatorType::Mul,
-            Slash => BinaryOperatorType::Div,
+            Equals => Assign,
+            Plus => Add,
+            Minus => Sub,
+            Star => Mul,
+            Slash => Div,
+            Percent => Mod,
             _ => panic!("Token is not a valid binary operator"),
         }
     }

@@ -15,6 +15,7 @@ mod expression;
 pub mod statement;
 mod function_signature;
 mod source_statements;
+mod precedence;
 
 impl TryFrom<SourceLines> for AST {
     type Error = SyntaxError;

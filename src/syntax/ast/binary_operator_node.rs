@@ -7,6 +7,7 @@ pub enum BinaryOperatorType {
     Sub,
     Mul,
     Div,
+    Mod,
 }
 
 #[derive(Debug)]
