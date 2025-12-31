@@ -15,7 +15,6 @@ mod expression;
 pub mod statement;
 mod function_signature;
 mod source_statements;
-mod precedence;
 
 impl TryFrom<SourceLines> for AST {
     type Error = SyntaxError;
@@ -84,7 +83,7 @@ impl Parser {
     fn parse_if_statement(&mut self, statement: Statement) -> SyntaxResult<IfNode> {
         const TOKENS_BEFORE_COND: usize = 2;
 
-        let if_cond = parse_expression(&statement, TOKENS_BEFORE_COND)?;
+        let if_cond = parse_expression(&statement[TOKENS_BEFORE_COND..])?;
         let if_body = self.parse_children(&statement)?;
 
         let mut condition_blocks = vec![ConditionBlock::new(if_cond, if_body)];
@@ -94,7 +93,7 @@ impl Parser {
                 .next()
                 .expect("Statement Expected");
 
-            let elif_cond = parse_expression(&statement, TOKENS_BEFORE_COND)?;
+            let elif_cond = parse_expression(&statement[TOKENS_BEFORE_COND..])?;
             let elif_body = self.parse_children(&statement)?;
 
             condition_blocks.push(ConditionBlock::new(elif_cond, elif_body));
@@ -122,7 +121,7 @@ impl Parser {
             match statement[Statement::INDEX_AFTER_INDENT].token_type {
                 Fn => Ok(Some(self.parse_function(statement)?.into())),
                 If => Ok(Some(self.parse_if_statement(statement)?.into())),
-                _ => Ok(Some(parse_expression(&statement, Statement::INDEX_AFTER_INDENT)?)),
+                _ => Ok(Some(parse_expression(&statement[Statement::INDEX_AFTER_INDENT..])?)),
             }
         } else {
             Ok(None)

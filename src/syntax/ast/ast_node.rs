@@ -1,8 +1,9 @@
-use crate::syntax::ast::ast_node::ASTNode::{BinaryOperator, FunctionDef, If};
+use crate::syntax::ast::ast_node::ASTNode::*;
 use crate::syntax::ast::binary_operator_node::BinaryOperatorNode;
 use crate::syntax::ast::function_call_node::FunctionCallNode;
 use crate::syntax::ast::function_def_node::FunctionDefNode;
 use crate::syntax::ast::if_node::IfNode;
+use crate::syntax::ast::unary_operator_node::UnaryOperatorNode;
 
 #[derive(Debug)]
 pub enum ASTNode {
@@ -11,6 +12,8 @@ pub enum ASTNode {
 
     Identifier(String),
 
+    UnaryOperator(UnaryOperatorNode),
+
     BinaryOperator(BinaryOperatorNode),
 
     FunctionDef(FunctionDefNode),
@@ -18,6 +21,12 @@ pub enum ASTNode {
     FunctionCall(FunctionCallNode),
     
     If(IfNode),
+}
+
+impl From<UnaryOperatorNode> for ASTNode {
+    fn from(node: UnaryOperatorNode) -> Self {
+        UnaryOperator(node)
+    }
 }
 
 impl From<BinaryOperatorNode> for ASTNode {

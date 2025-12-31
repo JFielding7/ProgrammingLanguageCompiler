@@ -1,106 +1,123 @@
-use crate::lexer::token::TokenType::*;
 use crate::lexer::token::Token;
+use crate::lexer::token::TokenType::*;
 use crate::syntax::ast::ast_node::ASTNode;
+use crate::syntax::ast::binary_operator_node::BinaryOperatorType::*;
 use crate::syntax::ast::binary_operator_node::{BinaryOperatorNode, BinaryOperatorType};
 use crate::syntax::error::unmatched_paren::UnmatchedParenError;
 use crate::syntax::error::SyntaxError::InvalidExpression;
 use crate::syntax::error::{SyntaxError, SyntaxResult};
 use std::ops::Deref;
-use crate::syntax::parser::precedence::{BinaryOperatorGroup, BinaryOperatorGroupIterator};
-use crate::syntax::ast::binary_operator_node::BinaryOperatorType::*;
+use crate::syntax::ast::unary_operator_node::{UnaryOperatorNode, UnaryOperatorType};
+use crate::syntax::ast::unary_operator_node::UnaryOperatorType::Neg;
 
 struct ExpressionParser<'a> {
     tokens: &'a [Token],
-    start: usize,
+    curr: usize,
     end: usize,
     paren_matches: &'a Vec<usize>,
-    start_op_group: Option<BinaryOperatorGroup>,
 }
 
 impl <'a> ExpressionParser<'a> {
 
-    pub fn new(tokens: &'a [Token], start: usize, paren_matches: &'a Vec<usize>) -> Self {
+    pub fn new(tokens: &'a [Token], paren_matches: &'a Vec<usize>) -> Self {
         Self {
             tokens,
-            start,
+            curr: 0,
             end: tokens.len(),
             paren_matches,
-            start_op_group: Some(BinaryOperatorGroup::lowest_precedence()),
         }
     }
 
-    fn sub_expression(&'a self, start: usize, end: usize, curr_op_group: Option<BinaryOperatorGroup>) -> Self {
+    fn sub_expression(&'a self, curr: usize, end: usize) -> Self {
         Self {
             tokens: self.tokens,
-            start,
+            curr,
             end,
             paren_matches: self.paren_matches,
-            start_op_group: curr_op_group,
         }
     }
 
-    fn remove_redundant_parens(&mut self) {
-        let prev_start = self.start;
+    fn parse_value(&mut self) -> SyntaxResult<ASTNode> {
+        let curr = self.curr;
+        self.curr += 1;
 
-        while self.start < self.len() && self[self.start] == OpenParen && self[self.end - 1] == CloseParen {
-            self.start += 1;
-            self.end -= 1;
-        }
+        let token = &self[curr];
+        let token_string = token.token_str.clone();
 
-        if self.start != prev_start {
-            self.start_op_group = Some(BinaryOperatorGroup::lowest_precedence());
+        match token.token_type {
+            IntLiteral    => Ok(ASTNode::IntLiteral(token_string)),
+            StringLiteral => Ok(ASTNode::StringLiteral(token_string)),
+            Identifier    => Ok(ASTNode::Identifier(token_string)),
+            _ => Err(InvalidExpression(token.location.clone()))
         }
     }
 
-    pub fn parse(&mut self) -> SyntaxResult<ASTNode> {
+    fn parse_paren_expression(&mut self) -> SyntaxResult<ASTNode> {
+        let curr = self.curr;
+        let paren_match = self.paren_matches[curr];
+        self.curr = paren_match + 1;
 
-        self.remove_redundant_parens();
+        self.sub_expression(curr + 1, paren_match).parse(0)
+    }
 
-        if self.start >= self.end {
+    fn parse_next_sub_expression(&mut self) -> SyntaxResult<ASTNode> {
+        if self[self.curr] == OpenParen {
+            self.parse_paren_expression()
+        } else {
+            self.parse_value()
+        }
+    }
+
+    fn parse_unary_operator(&mut self, unary_operator_type: UnaryOperatorType) -> SyntaxResult<ASTNode> {
+        self.curr += 1;
+
+        Ok(UnaryOperatorNode::new(
+            unary_operator_type, self.parse_next_sub_expression()?
+        ).into())
+    }
+
+    pub fn parse(&mut self, curr_precedence: u8) -> SyntaxResult<ASTNode> {
+
+        if self.curr >= self.end {
             return Err(self.empty_expression_error());
         }
 
-        if self.start + 1 == self.end {
-            return parse_value(&self[self.start]);
-        }
+        let mut left_node = if let Some(u) = unary_operator(&self[self.curr]) {
+            self.parse_unary_operator(u)
+        } else {
+            self.parse_next_sub_expression()
+        }?;
 
-        for group in BinaryOperatorGroupIterator::starting_with(self.start_op_group) {
-            let start = self.start as isize;
-            let mut i = self.end as isize - 1;
+        while self.curr < self.end {
 
-            while i >= start {
-                let index = i  as usize;
+            if let Some((left_prec, right_prec)) = operator_precedence(&self[self.curr]) {
 
-                if group.contains(&self[index]) {
-
-                    let left_node = self
-                        .sub_expression(self.start, index, Some(group))
-                        .parse()?;
-
-                    let right_node = self
-                        .sub_expression(index + 1, self.end, group.next_lowest_precedence_group())
-                        .parse()?;
-
-                    let op_token = &self[index];
-                    return Ok(BinaryOperatorNode::new(op_token.into(), left_node, right_node).into());
-                    
-                } else if self[index] == CloseParen {
-                    i = self.paren_matches[index] as isize;
-                } else {
-                    i -= 1;
+                if left_prec < curr_precedence {
+                    return Ok(left_node)
                 }
+
+                let op_token_index = self.curr;
+                self.curr += 1;
+                let right_node = self.parse(right_prec)?;
+
+                let op_token = &self[op_token_index];
+                left_node = BinaryOperatorNode::new(op_token.into(), left_node, right_node).into();
+
+            } else {
+                return Err(InvalidExpression(self[self.curr].location.clone()));
             }
         }
 
-        Err(InvalidExpression(self[self.start].location.clone()))
+        Ok(left_node)
     }
 
     fn empty_expression_error(&self) -> SyntaxError {
+        // TODO: fix if overall expr is empty
         InvalidExpression(
-            if self.start < self.len() {
-                self[self.start].location.clone()
+            if self.curr < self.len() {
+                self[self.curr].location.clone()
             } else {
-                self[self.start - 1].location.clone()
+                self[self.curr - 1].location.clone()
             }
         )
     }
@@ -114,17 +131,6 @@ impl<'a> Deref for ExpressionParser<'a> {
     }
 }
 
-fn parse_value(token: &Token) -> SyntaxResult<ASTNode> {
-    let token_string = token.token_str.clone();
-
-    match token.token_type {
-        IntLiteral    => Ok(ASTNode::IntLiteral(token_string)),
-        StringLiteral => Ok(ASTNode::StringLiteral(token_string)),
-        Identifier    => Ok(ASTNode::Identifier(token_string)),
-        _ => Err(InvalidExpression(token.location.clone()))
-    }
-}
-
 fn match_parens(expression: &[Token]) -> SyntaxResult<Vec<usize>> {
 
     let mut paren_matches = vec![0; expression.len()];
@@ -135,7 +141,7 @@ fn match_parens(expression: &[Token]) -> SyntaxResult<Vec<usize>> {
             open_parens.push(i);
         } else if let CloseParen = token.token_type {
             if let Some(j) = open_parens.pop() {
-                paren_matches[i] = j;
+                paren_matches[j] = i;
             } else {
                 return Err(UnmatchedParenError::new(
                     CloseParen, token.location.clone()
@@ -153,13 +159,28 @@ fn match_parens(expression: &[Token]) -> SyntaxResult<Vec<usize>> {
     Ok(paren_matches)
 }
 
-pub fn parse_expression(tokens: &[Token], start: usize) -> SyntaxResult<ASTNode> {
+pub fn parse_expression(tokens: &[Token]) -> SyntaxResult<ASTNode> {
 
     ExpressionParser::new(
         tokens,
-        start,
-        &match_parens(&tokens[start..])?,
-    ).parse()
+        &match_parens(tokens)?,
+    ).parse(0)
+}
+
+fn operator_precedence(op: &Token) -> Option<(u8, u8)> {
+    match op.token_type {
+        Equals => Some((1, 0)),
+        Plus | Minus => Some((3, 4)),
+        Star | Slash | Percent => Some((5, 6)),
+        _ => None,
+    }
+}
+
+fn unary_operator(op: &Token) -> Option<UnaryOperatorType> {
+    match op.token_type {
+        Minus => Some(Neg),
+        _ => None,
+    }
 }
 
 impl From<&Token> for BinaryOperatorType {

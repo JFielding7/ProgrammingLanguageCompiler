@@ -3,7 +3,7 @@ pub mod parameter_node;
 pub mod binary_operator_node;
 mod function_call_node;
 pub mod ast_node;
-mod unary_operator_node;
+pub mod unary_operator_node;
 pub mod if_node;
 
 use crate::syntax::ast::ast_node::ASTNode;
