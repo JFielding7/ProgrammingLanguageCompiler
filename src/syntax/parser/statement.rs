@@ -1,9 +1,11 @@
+use std::iter::Peekable;
 use crate::error_util::SourceLocation;
 use crate::lexer::token::TokenType::Indent;
 use crate::lexer::token::{Token, TokenType};
 use crate::syntax::error::expected_token::ExpectedTokenError;
 use crate::syntax::error::SyntaxResult;
 use std::ops::Deref;
+use std::vec::IntoIter;
 
 pub struct Statement {
     pub indent_size: usize,
@@ -63,53 +65,63 @@ impl Deref for Statement {
     }
 }
 
-pub struct StatementParser<'a> {
-    statement: &'a Statement,
-    curr_token_index: usize,
+impl IntoIterator for Statement {
+    type Item = Token;
+    type IntoIter = IntoIter<Token>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.tokens.into_iter()
+    }
 }
 
-impl<'a> StatementParser<'a> {
-    pub fn new(statement: &'a Statement) -> Self {
+pub struct StatementParser {
+    iter: Peekable<IntoIter<Token>>,
+    prev_token: Token,
+}
+
+impl StatementParser {
+    pub fn from_suffix(mut statement: Statement, start: usize) -> Self {
+        let prev_token = statement.tokens.remove(start - 1);
+
         Self {
-            statement,
-            curr_token_index: 0,
+            iter: statement.tokens.split_off(start).into_iter().peekable(),
+            prev_token,
         }
     }
 
     pub fn next_token_of_type(&mut self, token_type: TokenType) -> SyntaxResult<Token> {
-        let statement = self.statement;
 
-        if self.curr_token_index >= statement.len() {
-            return Err(ExpectedTokenError::new(
-                None, token_type, statement.end_location()
-            ).into())
-        }
+        match self.iter.next() {
+            None => {
+                Err(ExpectedTokenError::new(
+                    None, token_type, self.prev_token.location.clone() // TODO: after token
+                ).into())
+            },
 
-        let token = statement[self.curr_token_index].clone();
-        self.curr_token_index += 1;
-
-        if token == token_type {
-            Ok(token)
-        } else {
-            let location = token.location.clone();
-            Err(ExpectedTokenError::new(Some(token), token_type, location).into())
-        }
-    }
-
-    pub fn cmp_next_token_type(&self, token_type: TokenType) -> SyntaxResult<bool> {
-        let curr_token_index = self.curr_token_index;
-        let statement = self.statement;
-
-        if curr_token_index >= statement.len() {
-            Err(ExpectedTokenError::new(
-                None, token_type, statement.end_location()
-            ).into())
-        } else {
-            Ok(statement[curr_token_index] == token_type)
+            Some(token) => {
+                if token == token_type {
+                    Ok(token)
+                } else {
+                    let location = token.location.clone();
+                    Err(ExpectedTokenError::new(Some(token), token_type, location).into())
+                }
+            },
         }
     }
 
-    pub fn skip(&mut self, n: usize) {
-        self.curr_token_index += n;
+    pub fn cmp_next_token_type(&mut self, token_type: TokenType) -> SyntaxResult<bool> {
+        let curr_token = self.iter.peek();
+
+        match curr_token {
+            None => {
+                Err(ExpectedTokenError::new(
+                    None, token_type, self.prev_token.location.clone() // TODO: after token
+                ).into())
+            }
+
+            Some(token) => {
+                Ok(*token == token_type)
+            }
+        }
     }
 }
