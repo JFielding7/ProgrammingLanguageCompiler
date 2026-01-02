@@ -4,6 +4,12 @@ use crate::syntax::ast::ast_node::ASTNode;
 pub enum UnaryOperatorType {
     Neg,
     Not,
+    BitNot,
+    PreInc,
+    PreDec,
+    PostInc,
+    PostDec,
+    Deref,
 }
 
 #[derive(Debug)]

@@ -7,8 +7,16 @@ name = "ProgrammingLanguageCompiler"
 version = "0.1.0"
 dependencies = [
  "logos",
- "once_cell",
  "thiserror",
+]
+
+[[package]]
+name = "aho-corasick"
+version = "1.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ddd31a130427c27518df266943a5308ed92d4b226cc639f5a8f1002816174301"
+dependencies = [
+ "memchr",
 ]
 
 [[package]]
@@ -24,31 +32,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
-name = "lazy_static"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
-
-[[package]]
 name = "logos"
-version = "0.15.1"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ff472f899b4ec2d99161c51f60ff7075eeb3097069a36050d8037a6325eb8154"
+checksum = "a790d11254054e5dc83902dba85d253ff06ceb0cfafb12be8773435cb9dfb4f4"
 dependencies = [
  "logos-derive",
 ]
 
 [[package]]
 name = "logos-codegen"
-version = "0.15.1"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "192a3a2b90b0c05b27a0b2c43eecdb7c415e29243acc3f89cc8247a5b693045c"
+checksum = "f60337c43a38313b58871f8d5d76872b8e17aa9d51fad494b5e76092c0ce05f5"
 dependencies = [
  "beef",
  "fnv",
- "lazy_static",
  "proc-macro2",
  "quote",
+ "regex-automata",
  "regex-syntax",
  "rustc_version",
  "syn",
@@ -56,18 +58,18 @@ dependencies = [
 
 [[package]]
 name = "logos-derive"
-version = "0.15.1"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "605d9697bcd5ef3a42d38efc51541aa3d6a4a25f7ab6d1ed0da5ac632a26b470"
+checksum = "d151b2ae667f69e10b8738f5cac0c746faa22b2e15ea7e83b55476afec3767dc"
 dependencies = [
  "logos-codegen",
 ]
 
 [[package]]
-name = "once_cell"
-version = "1.21.3"
+name = "memchr"
+version = "2.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
+checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
 
 [[package]]
 name = "proc-macro2"
@@ -85,6 +87,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce25767e7b499d1b604768e7cde645d14cc8584231ea6b295e9c9eb22c02e1d1"
 dependencies = [
  "proc-macro2",
+]
+
+[[package]]
+name = "regex-automata"
+version = "0.4.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5276caf25ac86c8d810222b3dbb938e512c55c6831a10f3e6ed1c93b84041f1c"
+dependencies = [
+ "aho-corasick",
+ "memchr",
+ "regex-syntax",
 ]
 
 [[package]]

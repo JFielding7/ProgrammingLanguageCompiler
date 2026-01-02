@@ -31,14 +31,89 @@ pub enum TokenType {
     Plus,
     #[token("-")]
     Minus,
-    #[token("=")]
-    Equals,
     #[token("*")]
     Star,
     #[token("/")]
     Slash,
     #[token("%")]
     Percent,
+
+    #[token("++")]
+    PlusPlus,
+    #[token("--")]
+    MinusMinus,
+
+    #[token("=")]
+    Equals,
+    #[token("+=")]
+    PlusEquals,
+    #[token("-=")]
+    MinusEquals,
+    #[token("*=")]
+    StarEquals,
+    #[token("/=")]
+    SlashEquals,
+    #[token("%=")]
+    PercentEquals,
+
+    #[token("<<=")]
+    DoubleLeftArrowEquals,
+    #[token(">>=")]
+    DoubleRightArrowEquals,
+    #[token("&=")]
+    AmpersandEquals,
+    #[token("|=")]
+    PipeEquals,
+    #[token("^=")]
+    CaretEquals,
+
+    #[token("==")]
+    DoubleEquals,
+    #[token("!=")]
+    ExclamationEquals,
+    #[token("<")]
+    Less,
+    #[token(">")]
+    Greater,
+    #[token("<=")]
+    LessEquals,
+    #[token(">=")]
+    GreaterEquals,
+
+    #[token("&&")]
+    DoubleAmpersand,
+    #[token("||")]
+    DoublePipe,
+    #[token("!")]
+    Exclamation,
+
+    #[token("&")]
+    Ampersand,
+    #[token("|")]
+    Pipe,
+    #[token("^")]
+    Caret,
+    #[token("~")]
+    Tilde,
+    #[token("<<")]
+    DoubleLeftArrow,
+    #[token(">>")]
+    DoubleRightArrow,
+
+    #[token(".")]
+    Dot,
+
+    #[token("(")]
+    OpenParen,
+    #[token(")")]
+    CloseParen,
+    #[token("[")]
+    OpenBracket,
+    #[token("]")]
+    CloseBracket,
+
+    #[token(",")]
+    Comma,
 
     #[regex(r"[0-9]+")]
     IntLiteral,
@@ -48,16 +123,9 @@ pub enum TokenType {
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*")]
     Identifier,
 
-    #[token("(")]
-    OpenParen,
-    #[token(")")]
-    CloseParen,
-    #[token(",")]
-    Comma,
-
     #[regex(r"[ \t\f\v]+", logos::skip)]
     Whitespace,
-    #[regex(r"//.*", logos::skip)]
+    #[regex(r"//.*", logos::skip, allow_greedy = true)]
     Comment,
 
     Indent(usize),
