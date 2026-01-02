@@ -1,18 +1,6 @@
 use crate::syntax::ast::ast_node::ASTNode;
 
 #[derive(Debug)]
-pub enum UnaryOperatorType {
-    Neg,
-    Not,
-    BitNot,
-    PreInc,
-    PreDec,
-    PostInc,
-    PostDec,
-    Deref,
-}
-
-#[derive(Debug)]
 pub struct UnaryOperatorNode {
     op_type: UnaryOperatorType,
     operand: Box<ASTNode>,
@@ -28,4 +16,15 @@ impl UnaryOperatorNode {
             operand: Box::new(operand)
         }
     }
+}
+
+#[derive(Debug)]
+pub enum UnaryOperatorType {
+    Neg,
+    Not,
+    BitNot,
+    PreInc,
+    PreDec,
+    PostInc,
+    PostDec,
 }

@@ -1,7 +1,9 @@
 use crate::lexer::token::{Token, TokenType};
 use crate::lexer::token::TokenType::*;
+use crate::syntax::ast::access_node::{AccessNode, Member};
 use crate::syntax::ast::ast_node::ASTNode;
 use crate::syntax::ast::binary_operator_node::{BinaryOperatorNode, BinaryOperatorType};
+use crate::syntax::ast::index_node::{IndexNode, DerefType};
 use crate::syntax::ast::unary_operator_node::{UnaryOperatorNode, UnaryOperatorType};
 use crate::syntax::error::SyntaxError::InvalidExpression;
 use crate::syntax::error::SyntaxResult;
@@ -160,7 +162,6 @@ fn prefix_unary_operator_type(op: &Token) -> Option<UnaryOperatorType> {
         Tilde => BitNot,
         PlusPlus => PreInc,
         MinusMinus => PreDec,
-        Dot => Deref,
         _ => return None,
     })
 }
@@ -173,6 +174,60 @@ fn postfix_unary_operator_type(op: &Token) -> Option<UnaryOperatorType> {
         MinusMinus => PostDec,
         _ => return None,
     })
+}
+
+fn postfix_binary_operator_type(op: &Token) -> Option<UnaryOperatorType> {
+    use UnaryOperatorType::*;
+
+    Some(match op.token_type {
+        PlusPlus => PostInc,
+        MinusMinus => PostDec,
+        _ => return None,
+    })
+}
+
+fn deref_type(op: &Token) -> Option<DerefType> {
+    use DerefType::*;
+
+    Some(match op.token_type {
+        OpenParen => Call,
+        OpenBracket => Index,
+        _ => return None
+    })
+}
+
+fn is_terminal(token: &Token) -> bool {
+    match token.token_type {
+        CloseParen | CloseBracket => true,
+        _ => false
+    }
+}
+
+fn parse_accessed_member(token_stream: &mut TokenStream) -> SyntaxResult<Member> {
+    use Member::*;
+
+    if let Some(member_name) = token_stream.next() {
+        let member_name_string = member_name.to_string();
+        
+        if member_name.token_type != Identifier {
+            return Err(InvalidExpression(member_name.location.clone()));
+        }
+        
+        if let Some(&next_token) = token_stream.peek() {
+            if *next_token == OpenParen {
+                token_stream.next();
+                let arg = parse_expression_rec(token_stream, 0)?;
+                Ok(Method(member_name_string, Box::new(arg)))
+                
+            } else {
+                Ok(Field(member_name_string))
+            }
+        } else {
+            Ok(Field(member_name_string))
+        }
+    } else {
+        Err(InvalidExpression(token_stream.prev_location()))
+    }
 }
 
 fn parse_token(token: &Token) -> SyntaxResult<ASTNode> {
@@ -222,7 +277,7 @@ fn parse_expression_rec(token_stream: &mut TokenStream, curr_precedence: u8) -> 
 
     while let Some(&token) = token_stream.peek() {
 
-        if *token == CloseParen {
+        if is_terminal(token) {
             return Ok(left_node);
         }
 
@@ -233,7 +288,6 @@ fn parse_expression_rec(token_stream: &mut TokenStream, curr_precedence: u8) -> 
 
             token_stream.next();
 
-            // TODO: led hook for function call and indexing
             left_node = if let Some(op_type) = binary_operator_type(token) {
                 let right_node = parse_expression_rec(token_stream, right_precedence)?;
                 BinaryOperatorNode::new(op_type, left_node, right_node).into()
@@ -241,7 +295,15 @@ fn parse_expression_rec(token_stream: &mut TokenStream, curr_precedence: u8) -> 
             } else if let Some(op_type) = postfix_unary_operator_type(token) {
                 UnaryOperatorNode::new(op_type, left_node).into()
 
-            } else {
+            } else if let Some(op_type) = deref_type(token) {
+                let arg = parse_expression_rec(token_stream, 0)?;
+                IndexNode::new(op_type, left_node, arg).into()
+
+            } else if *token == Dot {
+                let member = parse_accessed_member(token_stream)?;
+                AccessNode::new(left_node, member).into()
+
+            }  else {
                 unreachable!("Led hook failed for {token}");
             }
         } else {

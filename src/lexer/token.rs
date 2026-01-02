@@ -10,7 +10,7 @@ pub struct Token {
     pub location: SourceLocation,
 }
 
-#[derive(Logos, Debug, Clone)]
+#[derive(Logos, Debug, Clone, PartialEq)]
 pub enum TokenType {
     #[token("fn")]
     Fn,
