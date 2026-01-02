@@ -1,3 +1,4 @@
+use crate::syntax::ast::access_node::Member::Field;
 use crate::syntax::ast::ast_node::ASTNode;
 
 #[derive(Debug)]
@@ -17,16 +18,33 @@ impl AccessNode {
 
 #[derive(Debug)]
 pub enum Member {
-    Field(String),
-    Method(String, Option<Box<ASTNode>>),
+    Field {
+        name: String,
+    },
+    Method {
+        name: String,
+        args: Option<Box<ASTNode>>,
+    },
 }
 
 impl Member {
-    pub fn method_no_args(method_name: String) -> Self {
-        Self::Method(method_name, None)
+    pub fn field(name: String) -> Self {
+        Field {
+            name,
+        }
+    }
+    
+    pub fn method_no_args(name: String) -> Self {
+        Self::Method {
+            name,
+            args: None,
+        }
     }
 
-    pub fn method_with_args(method_name: String, args: ASTNode) -> Self {
-        Self::Method(method_name, Some(Box::new(args)))
+    pub fn method_with_args(name: String, args: ASTNode) -> Self {
+        Self::Method {
+            name,
+            args: Some(Box::new(args)),
+        }
     }
 }

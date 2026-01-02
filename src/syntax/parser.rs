@@ -6,7 +6,7 @@ use crate::syntax::parser::ast_parser::ASTParser;
 use crate::syntax::parser::source_statements::SourceStatements;
 
 pub mod statement;
-mod function_signature;
+mod function_def_params;
 mod source_statements;
 mod expression;
 mod token_stream;

@@ -1,20 +1,31 @@
 use crate::syntax::ast::ast_node::ASTNode;
-use crate::syntax::ast::parameter_node::ParameterNode;
 
 #[derive(Debug)]
 pub struct FunctionDefNode {
     name: String,
-    params: Vec<ParameterNode>,
+    params: Vec<Parameter>,
     body: Vec<ASTNode>,
 }
 
 impl FunctionDefNode {
-    pub fn new(name: String, params: Vec<ParameterNode>, body: Vec<ASTNode>) -> Self {
+    pub fn new(name: String, params: Vec<Parameter>, body: Vec<ASTNode>) -> Self {
         Self {
             name,
             params,
             body,
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct Parameter {
+    name: String,
+    data_type: String,
+}
+
+impl Parameter {
+    pub fn new(name: String, data_type: String) -> Self {
+        Self { name, data_type }
     }
 }
 

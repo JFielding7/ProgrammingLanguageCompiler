@@ -3,6 +3,7 @@ use crate::syntax::parser::statement::Statement;
 use std::iter::Peekable;
 use std::slice::Iter;
 use crate::error_util::SourceLocation;
+use crate::lexer::token::TokenType::Identifier;
 use crate::syntax::error::expected_token::ExpectedTokenError;
 use crate::syntax::error::SyntaxResult;
 
@@ -54,12 +55,16 @@ impl<'a> TokenStream<'a> {
             },
         }
     }
+    
+    pub fn next_identifier(&mut self) -> SyntaxResult<String> {
+        self.next_token_of_type(Identifier).map(|token| token.token_str.clone())
+    }
 
-    pub fn check_next_token_type(&mut self, token_type: TokenType) -> bool {
+    pub fn check_next_token(&mut self, token_type: TokenType) -> bool {
         self.peek().is_some_and(|&token| *token == token_type)
     }
 
-    pub fn expect_next_token_type(&mut self, token_type: TokenType) -> SyntaxResult<bool> {
+    pub fn expect_next_token(&mut self, token_type: TokenType) -> SyntaxResult<bool> {
 
         match self.peek() {
             None => {

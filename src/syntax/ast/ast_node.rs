@@ -1,11 +1,13 @@
 use crate::syntax::ast::access_node::AccessNode;
 use crate::syntax::ast::ast_node::ASTNode::*;
 use crate::syntax::ast::binary_operator_node::BinaryOperatorNode;
+use crate::syntax::ast::for_node::ForNode;
 use crate::syntax::ast::function_call_node::FunctionCallNode;
 use crate::syntax::ast::index_node::IndexNode;
 use crate::syntax::ast::function_def_node::FunctionDefNode;
 use crate::syntax::ast::if_node::IfNode;
 use crate::syntax::ast::unary_operator_node::UnaryOperatorNode;
+use crate::syntax::ast::while_node::WhileNode;
 
 #[derive(Debug)]
 pub enum ASTNode {
@@ -27,6 +29,10 @@ pub enum ASTNode {
     Access(AccessNode),
     
     If(IfNode),
+    
+    While(WhileNode),
+
+    For(ForNode),
 }
 
 impl From<UnaryOperatorNode> for ASTNode {
@@ -68,5 +74,17 @@ impl From<FunctionDefNode> for ASTNode {
 impl From<IfNode> for ASTNode {
     fn from(node: IfNode) -> Self {
         If(node)
+    }
+}
+
+impl From<WhileNode> for ASTNode {
+    fn from(node: WhileNode) -> Self {
+        While(node)
+    }
+}
+
+impl From<ForNode> for ASTNode {
+    fn from(node: ForNode) -> Self {
+        For(node)
     }
 }

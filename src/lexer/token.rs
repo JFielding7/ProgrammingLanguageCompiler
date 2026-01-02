@@ -24,6 +24,8 @@ pub enum TokenType {
 
     #[token("for")]
     For,
+    #[token("in")]
+    In,
     #[token("while")]
     While,
 
@@ -167,6 +169,7 @@ impl std::fmt::Display for TokenType {
             OpenParen => "'('",
             CloseParen => "')'",
             Comma => "','",
+            In => "'in'",
             Indent(_) => "Indent",
             _ => ""
         })
