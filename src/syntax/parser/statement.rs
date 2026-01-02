@@ -6,6 +6,7 @@ use crate::syntax::error::expected_token::ExpectedTokenError;
 use crate::syntax::error::SyntaxResult;
 use std::ops::Deref;
 use std::vec::IntoIter;
+use crate::syntax::parser::token_stream::TokenStream;
 
 pub struct Statement {
     pub indent_size: usize,
@@ -71,57 +72,5 @@ impl IntoIterator for Statement {
 
     fn into_iter(self) -> Self::IntoIter {
         self.tokens.into_iter()
-    }
-}
-
-pub struct StatementParser {
-    iter: Peekable<IntoIter<Token>>,
-    prev_token: Token,
-}
-
-impl StatementParser {
-    pub fn from_suffix(mut statement: Statement, start: usize) -> Self {
-        let prev_token = statement.tokens.remove(start - 1);
-
-        Self {
-            iter: statement.tokens.split_off(start).into_iter().peekable(),
-            prev_token,
-        }
-    }
-
-    pub fn next_token_of_type(&mut self, token_type: TokenType) -> SyntaxResult<Token> {
-
-        match self.iter.next() {
-            None => {
-                Err(ExpectedTokenError::new(
-                    None, token_type, self.prev_token.location.clone() // TODO: after token
-                ).into())
-            },
-
-            Some(token) => {
-                if token == token_type {
-                    Ok(token)
-                } else {
-                    let location = token.location.clone();
-                    Err(ExpectedTokenError::new(Some(token), token_type, location).into())
-                }
-            },
-        }
-    }
-
-    pub fn cmp_next_token_type(&mut self, token_type: TokenType) -> SyntaxResult<bool> {
-        let curr_token = self.iter.peek();
-
-        match curr_token {
-            None => {
-                Err(ExpectedTokenError::new(
-                    None, token_type, self.prev_token.location.clone() // TODO: after token
-                ).into())
-            }
-
-            Some(token) => {
-                Ok(*token == token_type)
-            }
-        }
     }
 }

@@ -1,10 +1,10 @@
 use crate::lexer::token::TokenType::{CloseParen, Comma, Identifier, OpenParen};
 use crate::syntax::ast::parameter_node::ParameterNode;
 use crate::syntax::error::SyntaxResult;
-use crate::syntax::parser::statement::StatementParser;
+use crate::syntax::parser::statement_parser::StatementParser;
 
 pub fn parse_function_name(statement_parser: &mut StatementParser) -> SyntaxResult<String> {
-    statement_parser.next_token_of_type(Identifier).map(|token| token.token_str)
+    statement_parser.next_token_of_type(Identifier).map(|token| token.token_str.clone())
 }
 
 pub fn parse_parameters(statement_parser: &mut StatementParser) -> SyntaxResult<Vec<ParameterNode>> {
@@ -28,8 +28,8 @@ pub fn parse_parameters(statement_parser: &mut StatementParser) -> SyntaxResult<
 }
 
 fn parse_parameter(statement_parser: &mut StatementParser) -> SyntaxResult<ParameterNode> {
-    let param_type = statement_parser.next_token_of_type(Identifier)?.token_str;
-    let param_name = statement_parser.next_token_of_type(Identifier)?.token_str;
+    let param_type = statement_parser.next_token_of_type(Identifier)?.token_str.clone();
+    let param_name = statement_parser.next_token_of_type(Identifier)?.token_str.clone();
 
     Ok(ParameterNode::new(param_name, param_type))
 }
