@@ -7,7 +7,7 @@ use crate::syntax::parser::expression::parse_expression;
 use crate::syntax::parser::function_signature::{parse_function_name, parse_parameters};
 use crate::syntax::parser::source_statements::{SourceStatements, SourceStatementsIter};
 use crate::syntax::parser::statement::Statement;
-use crate::syntax::parser::statement_parser::StatementParser;
+use crate::syntax::parser::token_stream::TokenStream;
 
 pub struct ASTParser {
     source_statements_iter: SourceStatementsIter,
@@ -39,10 +39,10 @@ impl ASTParser {
         const TOKENS_BEFORE_NAME: usize = 2;
 
         let parent_indent = statement.indent_size;
-        let mut statement_parser = StatementParser::from_suffix(&statement, TOKENS_BEFORE_NAME);
+        let mut token_stream = TokenStream::from_statement_suffix(&statement, TOKENS_BEFORE_NAME);
 
-        let name = parse_function_name(&mut statement_parser)?;
-        let params = parse_parameters(&mut statement_parser)?;
+        let name = parse_function_name(&mut token_stream)?;
+        let params = parse_parameters(&mut token_stream)?;
         let body = self.parse_children(parent_indent)?;
 
         Ok(FunctionDefNode::new(name, params, body))

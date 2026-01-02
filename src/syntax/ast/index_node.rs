@@ -7,16 +7,10 @@ pub struct IndexNode {
 }
 
 impl IndexNode {
-    pub fn new(op_type: DerefType, operand: ASTNode, arg: ASTNode) -> Self {
+    pub fn new(operand: ASTNode, arg: ASTNode) -> Self {
         Self {
             operand: Box::new(operand),
             arg: Box::new(arg), 
         }
     }
-}
-
-#[derive(Debug)]
-pub enum DerefType {
-    Call,
-    Index,
 }

@@ -18,5 +18,15 @@ impl AccessNode {
 #[derive(Debug)]
 pub enum Member {
     Field(String),
-    Method(String, Box<ASTNode>),
+    Method(String, Option<Box<ASTNode>>),
+}
+
+impl Member {
+    pub fn method_no_args(method_name: String) -> Self {
+        Self::Method(method_name, None)
+    }
+
+    pub fn method_with_args(method_name: String, args: ASTNode) -> Self {
+        Self::Method(method_name, Some(Box::new(args)))
+    }
 }

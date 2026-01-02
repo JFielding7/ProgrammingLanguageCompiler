@@ -1,6 +1,7 @@
 use crate::syntax::ast::access_node::AccessNode;
 use crate::syntax::ast::ast_node::ASTNode::*;
 use crate::syntax::ast::binary_operator_node::BinaryOperatorNode;
+use crate::syntax::ast::function_call_node::FunctionCallNode;
 use crate::syntax::ast::index_node::IndexNode;
 use crate::syntax::ast::function_def_node::FunctionDefNode;
 use crate::syntax::ast::if_node::IfNode;
@@ -19,7 +20,9 @@ pub enum ASTNode {
 
     FunctionDef(FunctionDefNode),
 
-    Deref(IndexNode),
+    FunctionCall(FunctionCallNode),
+
+    Index(IndexNode),
 
     Access(AccessNode),
     
@@ -40,13 +43,19 @@ impl From<BinaryOperatorNode> for ASTNode {
 
 impl From<IndexNode> for ASTNode {
     fn from(node: IndexNode) -> Self {
-        Deref(node)
+        Index(node)
     }
 }
 
 impl From<AccessNode> for ASTNode {
     fn from(node: AccessNode) -> Self {
         Access(node)
+    }
+}
+
+impl From<FunctionCallNode> for ASTNode {
+    fn from(node: FunctionCallNode) -> Self {
+        FunctionCall(node)
     }
 }
 

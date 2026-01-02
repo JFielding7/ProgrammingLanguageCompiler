@@ -1,12 +1,14 @@
-use crate::lexer::token::Token;
+use crate::lexer::token::{Token, TokenType};
 use crate::syntax::parser::statement::Statement;
 use std::iter::Peekable;
 use std::slice::Iter;
 use crate::error_util::SourceLocation;
+use crate::syntax::error::expected_token::ExpectedTokenError;
+use crate::syntax::error::SyntaxResult;
 
 pub struct TokenStream<'a> {
     iter: Peekable<Iter<'a, Token>>,
-    pub(crate) prev: &'a Token,
+    prev: &'a Token,
 }
 
 
@@ -31,6 +33,45 @@ impl<'a> TokenStream<'a> {
     
     pub fn prev_location(&self) -> SourceLocation {
         self.prev.location.clone()
+    }
+
+    pub fn next_token_of_type(&mut self, token_type: TokenType) -> SyntaxResult<&Token> {
+
+        match self.next() {
+            None => {
+                Err(ExpectedTokenError::new(
+                    None, token_type, self.prev_location()
+                ).into())
+            },
+
+            Some(token) => {
+                if *token == token_type {
+                    Ok(token)
+                } else {
+                    let location = token.location.clone();
+                    Err(ExpectedTokenError::new(Some(token.clone()), token_type, location).into())
+                }
+            },
+        }
+    }
+
+    pub fn check_next_token_type(&mut self, token_type: TokenType) -> bool {
+        self.peek().is_some_and(|&token| *token == token_type)
+    }
+
+    pub fn expect_next_token_type(&mut self, token_type: TokenType) -> SyntaxResult<bool> {
+
+        match self.peek() {
+            None => {
+                Err(ExpectedTokenError::new(
+                    None, token_type, self.prev_location()
+                ).into())
+            }
+
+            Some(&token) => {
+                Ok(*token == token_type)
+            }
+        }
     }
 }
 
