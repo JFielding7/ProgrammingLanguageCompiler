@@ -1,11 +1,10 @@
-use crate::lexer::token::{Token, TokenType};
-use crate::syntax::parser::statement::Statement;
-use std::iter::Peekable;
-use std::slice::Iter;
 use crate::error_util::SourceLocation;
 use crate::lexer::token::TokenType::Identifier;
+use crate::lexer::token::{Token, TokenType};
 use crate::syntax::error::expected_token::ExpectedTokenError;
 use crate::syntax::error::SyntaxResult;
+use std::iter::Peekable;
+use std::slice::Iter;
 
 pub struct TokenStream<'a> {
     iter: Peekable<Iter<'a, Token>>,
@@ -14,13 +13,10 @@ pub struct TokenStream<'a> {
 
 
 impl<'a> TokenStream<'a> {
-    pub fn from_statement_suffix(statement: &'a Statement, start: usize) -> Self {
-        let prev = &statement[start - 1];
-        let iter = statement[start..].iter().peekable();
-
+    pub fn new(tokens: &'a [Token]) -> Self {
         Self {
-            iter,
-            prev
+            iter: tokens.iter().peekable(),
+            prev: &tokens[0]
         }
     }
 

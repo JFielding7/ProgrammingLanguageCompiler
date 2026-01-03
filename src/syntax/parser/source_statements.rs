@@ -2,7 +2,6 @@ use crate::lexer::tokenizer::SourceLines;
 use crate::syntax::parser::statement::Statement;
 use std::iter::Peekable;
 use std::vec::IntoIter;
-use crate::lexer::token::TokenType;
 
 pub struct SourceStatements {
     statements: Vec<Statement>
@@ -48,46 +47,9 @@ impl From<SourceLines> for SourceStatements {
 
 impl IntoIterator for SourceStatements {
     type Item = Statement;
-    type IntoIter = SourceStatementsIter;
+    type IntoIter = Peekable<IntoIter<Statement>>;
     
     fn into_iter(self) -> Self::IntoIter {
-        SourceStatementsIter::new(self)
-    }
-}
-
-pub struct SourceStatementsIter {
-    iter: Peekable<IntoIter<Statement>>
-}
-
-impl SourceStatementsIter {
-    fn new(source_statements: SourceStatements) -> Self {
-        Self { 
-            iter: source_statements.statements.into_iter().peekable() 
-        }
-    }
-    
-    pub fn next_is_child(&mut self, parent_indent_size: usize) -> bool {
-
-        if let Some(child) = &mut self.iter.peek() {
-            child.indent_size > parent_indent_size
-        } else {
-            false
-        }
-    }
-
-    pub fn next_starts_with(&mut self, token_type: TokenType) -> bool {
-        if let Some(statement) = self.iter.peek() {
-            statement.starts_with(token_type)
-        } else {
-            false
-        }
-    }
-}
-
-impl Iterator for SourceStatementsIter {
-    type Item = Statement;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next()
+        self.statements.into_iter().peekable()
     }
 }

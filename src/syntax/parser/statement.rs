@@ -34,27 +34,20 @@ impl Statement {
         }
     }
 
-    pub fn starts_with(&self, token_type: TokenType) -> bool {
-        if self.len() > 1 {
-            self[1] == token_type
+    pub fn start_token_type(&self) -> &TokenType {
+        if self.len() > Self::INDEX_AFTER_INDENT {
+            &self[Self::INDEX_AFTER_INDENT].token_type
         } else {
             unreachable!("Statement must not be blank")
         }
     }
 
-    fn end_location(&self) -> SourceLocation {
-        let last_token_location = &self.tokens
-            .last()
-            .expect("Statement must have at least one token")
-            .location;
+    pub fn starts_with(&self, token_type: TokenType) -> bool {
+        self.start_token_type() == &token_type
+    }
 
-        SourceLocation::new(
-            last_token_location.file_name.clone(),
-            last_token_location.line_content.clone(),
-            last_token_location.line_num,
-            last_token_location.end,
-            last_token_location.end + 1
-        )
+    pub fn suffix(&self, start: usize) -> &[Token] {
+        &self.tokens[start..]
     }
 }
 

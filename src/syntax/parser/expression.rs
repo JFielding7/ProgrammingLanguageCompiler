@@ -1,15 +1,14 @@
-use crate::lexer::token::{Token, TokenType};
 use crate::lexer::token::TokenType::*;
+use crate::lexer::token::{Token, TokenType};
 use crate::syntax::ast::access_node::{AccessNode, Member};
 use crate::syntax::ast::ast_node::ASTNode;
 use crate::syntax::ast::binary_operator_node::{BinaryOperatorNode, BinaryOperatorType};
 use crate::syntax::ast::function_call_node::FunctionCallNode;
-use crate::syntax::ast::index_node::{IndexNode};
+use crate::syntax::ast::index_node::IndexNode;
 use crate::syntax::ast::unary_operator_node::{UnaryOperatorNode, UnaryOperatorType};
 use crate::syntax::error::SyntaxError::InvalidExpression;
 use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::expression::OperatorPrecedence::Prefix;
-use crate::syntax::parser::statement::Statement;
 use crate::syntax::parser::token_stream::TokenStream;
 
 #[repr(u8)]
@@ -303,12 +302,12 @@ fn parse_expression_rec(token_stream: &mut TokenStream, curr_precedence: u8) -> 
     Ok(left_node)
 }
 
-pub fn parse_expression(statement: &Statement, start: usize) -> SyntaxResult<ASTNode> {
-    let mut token_stream = TokenStream::from_statement_suffix(statement, start);
+pub fn parse_expression(tokens: &[Token]) -> SyntaxResult<ASTNode> {
+    let mut token_stream = TokenStream::new(tokens);
 
     parse_expression_rec(&mut token_stream, 0)
 }
 
-pub fn parse_expression_from_token_stream(token_stream: &mut TokenStream) -> SyntaxResult<ASTNode> {
-    parse_expression_rec(token_stream, 0)
+pub fn parse_expression_from_token_stream(mut token_stream: TokenStream) -> SyntaxResult<ASTNode> {
+    parse_expression_rec(&mut token_stream, 0)
 }

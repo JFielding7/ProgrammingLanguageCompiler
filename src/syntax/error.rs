@@ -16,6 +16,9 @@ pub enum SyntaxError {
 
     #[error("Error: Invalid Expression\n{0}")]
     InvalidExpression(SourceLocation),
+
+    #[error("Error: Line indented too far in\n{0}")]
+    IndentTooLarge(SourceLocation),
 }
 
 pub type SyntaxResult<T> = Result<T, SyntaxError>;
