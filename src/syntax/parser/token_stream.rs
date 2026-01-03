@@ -11,7 +11,6 @@ pub struct TokenStream<'a> {
     prev: &'a Token,
 }
 
-
 impl<'a> TokenStream<'a> {
     pub fn new(tokens: &'a [Token]) -> Self {
         Self {
@@ -56,11 +55,11 @@ impl<'a> TokenStream<'a> {
         self.next_token_of_type(Identifier).map(|token| token.token_str.clone())
     }
 
-    pub fn check_next_token(&mut self, token_type: TokenType) -> bool {
+    pub fn next_matches(&mut self, token_type: TokenType) -> bool {
         self.peek().is_some_and(|&token| *token == token_type)
     }
 
-    pub fn expect_next_token(&mut self, token_type: TokenType) -> SyntaxResult<bool> {
+    pub fn required_next_matches(&mut self, token_type: TokenType) -> SyntaxResult<bool> {
 
         match self.peek() {
             None => {

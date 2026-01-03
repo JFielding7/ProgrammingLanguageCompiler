@@ -187,7 +187,7 @@ fn parse_required_args(token_stream: &mut TokenStream) -> SyntaxResult<ASTNode> 
 }
 
 fn parse_optional_args(token_stream: &mut TokenStream) -> SyntaxResult<Option<ASTNode>> {
-    let arg = if token_stream.check_next_token(CloseParen) {
+    let arg = if token_stream.next_matches(CloseParen) {
         None
     } else {
         Some(parse_expression_rec(token_stream, 0)?)
@@ -201,10 +201,10 @@ fn parse_accessed_member(token_stream: &mut TokenStream) -> SyntaxResult<Member>
     let member_name = token_stream.next_token_of_type(Identifier)?;
     let member_name_string = member_name.to_string();
 
-    if token_stream.check_next_token(OpenParen) {
+    if token_stream.next_matches(OpenParen) {
         token_stream.next();
 
-        let member = if token_stream.check_next_token(CloseParen) {
+        let member = if token_stream.next_matches(CloseParen) {
             Ok(Member::method_no_args(member_name_string))
         } else {
             let args = parse_expression_rec(token_stream, 0)?;
@@ -302,12 +302,6 @@ fn parse_expression_rec(token_stream: &mut TokenStream, curr_precedence: u8) -> 
     Ok(left_node)
 }
 
-pub fn parse_expression(tokens: &[Token]) -> SyntaxResult<ASTNode> {
-    let mut token_stream = TokenStream::new(tokens);
-
-    parse_expression_rec(&mut token_stream, 0)
-}
-
-pub fn parse_expression_from_token_stream(mut token_stream: TokenStream) -> SyntaxResult<ASTNode> {
+pub fn parse_expression(mut token_stream: TokenStream) -> SyntaxResult<ASTNode> {
     parse_expression_rec(&mut token_stream, 0)
 }

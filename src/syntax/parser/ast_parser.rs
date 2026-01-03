@@ -7,7 +7,7 @@ use crate::syntax::ast::if_node::{ConditionBlock, IfNode};
 use crate::syntax::ast::while_node::WhileNode;
 use crate::syntax::error::SyntaxError::IndentTooLarge;
 use crate::syntax::error::SyntaxResult;
-use crate::syntax::parser::expression::{parse_expression, parse_expression_from_token_stream};
+use crate::syntax::parser::expression::parse_expression;
 use crate::syntax::parser::function_def_params::parse_parameters;
 use crate::syntax::parser::source_statements::SourceStatements;
 use crate::syntax::parser::statement::Statement;
@@ -71,7 +71,7 @@ impl ASTParser {
     fn parse_if_statement(&mut self, if_statement: Statement) -> SyntaxResult<IfNode> {
         const TOKENS_BEFORE_COND: usize = 2;
 
-        let if_cond = parse_expression(if_statement.suffix(TOKENS_BEFORE_COND))?;
+        let if_cond = parse_expression(if_statement.suffix_token_stream(TOKENS_BEFORE_COND))?;
         let if_body = self.parse_children(&if_statement)?;
 
         let mut condition_blocks = vec![ConditionBlock::new(if_cond, if_body)];
@@ -81,7 +81,7 @@ impl ASTParser {
                 .next()
                 .expect("Statement Expected");
 
-            let elif_cond = parse_expression(elif_statement.suffix(TOKENS_BEFORE_COND))?;
+            let elif_cond = parse_expression(elif_statement.suffix_token_stream(TOKENS_BEFORE_COND))?;
             let elif_body = self.parse_children(&elif_statement)?;
 
             condition_blocks.push(ConditionBlock::new(elif_cond, elif_body));
@@ -103,7 +103,7 @@ impl ASTParser {
     fn parse_while_loop(&mut self, while_statement: Statement) -> SyntaxResult<WhileNode> {
         const TOKENS_BEFORE_COND: usize = 2;
 
-        let while_cond = parse_expression(while_statement.suffix(TOKENS_BEFORE_COND))?;
+        let while_cond = parse_expression(while_statement.suffix_token_stream(TOKENS_BEFORE_COND))?;
         let while_body = self.parse_children(&while_statement)?;
 
         Ok(WhileNode::new(while_cond, while_body))
@@ -116,7 +116,7 @@ impl ASTParser {
 
         let item_identifier = token_stream.next_identifier()?;
         token_stream.next_token_of_type(In)?;
-        let iterator = parse_expression_from_token_stream(token_stream)?;
+        let iterator = parse_expression(token_stream)?;
         let for_body = self.parse_children(&for_statement)?;
 
         Ok(ForNode::new(item_identifier, iterator, for_body))
@@ -131,7 +131,7 @@ impl ASTParser {
                 If => Ok(Some(self.parse_if_statement(statement)?.into())),
                 While => Ok(Some(self.parse_while_loop(statement)?.into())),
                 For => Ok(Some(self.parse_for_loop(statement)?.into())),
-                _ => Ok(Some(parse_expression(statement.suffix(Statement::INDEX_AFTER_INDENT))?)),
+                _ => Ok(Some(parse_expression(statement.suffix_token_stream(Statement::INDEX_AFTER_INDENT))?)),
             }
         } else {
             Ok(None)

@@ -8,13 +8,13 @@ pub fn parse_parameters(token_stream: &mut TokenStream) -> SyntaxResult<Vec<Para
 
     let mut params = Vec::new();
 
-    if token_stream.expect_next_token(CloseParen)? {
+    if token_stream.required_next_matches(CloseParen)? {
         return Ok(params);
     }
 
     params.push(parse_parameter(token_stream)?);
 
-    while token_stream.expect_next_token(Comma)? {
+    while token_stream.required_next_matches(Comma)? {
         token_stream.next();
         params.push(parse_parameter(token_stream)?);
     }

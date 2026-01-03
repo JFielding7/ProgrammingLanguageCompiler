@@ -49,6 +49,10 @@ impl Statement {
     pub fn suffix(&self, start: usize) -> &[Token] {
         &self.tokens[start..]
     }
+
+    pub fn suffix_token_stream(&self, start: usize) -> TokenStream<'_> {
+        TokenStream::new(&self.tokens[start..])
+    }
 }
 
 impl Deref for Statement {
