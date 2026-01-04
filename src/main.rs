@@ -1,16 +1,19 @@
+use error::compiler_error::CompilerError::{FileRead, NoInputFiles};
+use error::compiler_error::CompilerResult;
+use crate::lexer::tokenizer::lex;
+use crate::syntax::ast::AST;
 use std::fs::read_to_string;
 use std::path::Path;
-use crate::compiler_error::CompilerError::{NoInputFiles, FileRead};
-use crate::compiler_error::CompilerResult;
-use crate::lexer::tokenizer::SourceLines;
-use crate::syntax::ast::AST;
+use crate::lexer::error::LexerError;
+use source::source_file::SourceFile;
+use crate::syntax::error::SyntaxError;
 
-mod error_util;
 mod lexer;
 mod syntax;
-mod compiler_error;
+mod error;
+mod source;
 
-fn compile_program(args: Vec<String>) -> CompilerResult<()> {
+fn compile_program(args: Vec<String>) -> CompilerResult {
     const MIN_ARG_COUNT: usize = 2;
 
     if args.len() < MIN_ARG_COUNT {
@@ -22,9 +25,11 @@ fn compile_program(args: Vec<String>) -> CompilerResult<()> {
     let src = read_to_string(path)
         .map_err(|error| FileRead { file_name: file_name.clone(), error })?;
 
-    let source_lines = SourceLines::lex(path, src)?;
+    let f = SourceFile::new(path.to_path_buf(), src.lines().map(|s| s.to_string()).collect::<Vec<String>>());
 
-    let ast: AST = source_lines.try_into()?;
+    let source_lines = lex(src).map_err(|e: LexerError| e.compiler_error(&f))?;
+
+    let ast: AST = source_lines.try_into().map_err(|e: SyntaxError| e.compiler_error(&f))?;
     
     println!("{:?}", ast);
     

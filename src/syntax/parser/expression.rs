@@ -1,13 +1,14 @@
 use crate::lexer::token::TokenType::*;
 use crate::lexer::token::{Token, TokenType};
+use crate::error::spanned_error::WithSpan;
 use crate::syntax::ast::access_node::{AccessNode, Member};
 use crate::syntax::ast::ast_node::ASTNode;
 use crate::syntax::ast::binary_operator_node::{BinaryOperatorNode, BinaryOperatorType};
 use crate::syntax::ast::function_call_node::FunctionCallNode;
 use crate::syntax::ast::index_node::IndexNode;
 use crate::syntax::ast::unary_operator_node::{UnaryOperatorNode, UnaryOperatorType};
-use crate::syntax::error::SyntaxError::InvalidExpression;
-use crate::syntax::error::SyntaxResult;
+use crate::syntax::error::SyntaxErrorType::InvalidExpression;
+use crate::syntax::error::{SyntaxError, SyntaxErrorType, SyntaxResult};
 use crate::syntax::parser::expression::OperatorPrecedence::Prefix;
 use crate::syntax::parser::token_stream::TokenStream;
 
@@ -180,25 +181,45 @@ fn is_terminal(token: &Token) -> bool {
     matches!(token.token_type, CloseParen | CloseBracket)
 }
 
-fn parse_required_args(token_stream: &mut TokenStream) -> SyntaxResult<ASTNode> {
-    let arg = parse_expression_rec(token_stream, 0)?;
-    token_stream.next();
-    Ok(arg)
+fn close_token(open_token: &Token) -> TokenType {
+    use TokenType::*;
+    
+    match open_token.token_type {
+        OpenParen => CloseParen,
+        OpenBracket => CloseBracket,
+        _ => unreachable!("Invalid group opening token: {open_token}"),
+    }
 }
 
-fn parse_optional_args(token_stream: &mut TokenStream) -> SyntaxResult<Option<ASTNode>> {
-    let arg = if token_stream.next_matches(CloseParen) {
+fn assert_group_closed(token_stream: &mut TokenStream, open_token: &Token) -> SyntaxResult<()> {
+    if token_stream.next_matches(close_token(open_token)) {
+        token_stream.next();
+        Ok(())
+    } else {
+        Err(SyntaxErrorType::unmatched_paren(open_token.token_type.clone()).at(open_token.location.clone()))
+    }
+}
+
+fn parse_required_grouped_expression(token_stream: &mut TokenStream, open_token: &Token) -> SyntaxResult<ASTNode> {
+    let group = parse_expression_rec(token_stream, 0)?;
+    
+    assert_group_closed(token_stream, open_token)?;
+    Ok(group)
+}
+
+fn parse_optional_grouped_expression(token_stream: &mut TokenStream, open_token: &Token) -> SyntaxResult<Option<ASTNode>> {
+    let group = if token_stream.next_matches(CloseParen) {
         None
     } else {
         Some(parse_expression_rec(token_stream, 0)?)
     };
 
-    token_stream.next();
-    Ok(arg)
+    assert_group_closed(token_stream, open_token)?;
+    Ok(group)
 }
 
 fn parse_accessed_member(token_stream: &mut TokenStream) -> SyntaxResult<Member> {
-    let member_name = token_stream.next_token_of_type(Identifier)?;
+    let member_name = token_stream.expect_next_token(Identifier)?;
     let member_name_string = member_name.to_string();
 
     if token_stream.next_matches(OpenParen) {
@@ -225,14 +246,14 @@ fn parse_token(token: &Token) -> SyntaxResult<ASTNode> {
         IntLiteral    => Ok(ASTNode::IntLiteral(token_string)),
         StringLiteral => Ok(ASTNode::StringLiteral(token_string)),
         Identifier    => Ok(ASTNode::Identifier(token_string)),
-        _ => Err(InvalidExpression(token.location.clone()))
+        _ => Err(InvalidExpression.at(token.location.clone()))
     }
 }
 
 fn nud_hook(token_stream: &mut TokenStream) -> SyntaxResult<ASTNode> {
 
     match token_stream.next() {
-        None => Err(InvalidExpression(token_stream.prev_location())),
+        None => Err(InvalidExpression.at(token_stream.prev_location())),
 
         Some(token) => {
             if let Some(unary_op_type) = prefix_unary_operator_type(token) {
@@ -242,7 +263,7 @@ fn nud_hook(token_stream: &mut TokenStream) -> SyntaxResult<ASTNode> {
                 ).into())
 
             } else if *token == OpenParen {
-                parse_required_args(token_stream)
+                parse_required_grouped_expression(token_stream, token)
 
             } else {
                 parse_token(token)
@@ -254,7 +275,7 @@ fn nud_hook(token_stream: &mut TokenStream) -> SyntaxResult<ASTNode> {
 fn parse_expression_rec(token_stream: &mut TokenStream, curr_precedence: u8) -> SyntaxResult<ASTNode> {
 
     if token_stream.empty() {
-        return Err(InvalidExpression(token_stream.prev_location()))
+        return Err(InvalidExpression.at(token_stream.prev_location()))
     }
 
     let mut left_node = nud_hook(token_stream)?;
@@ -280,11 +301,11 @@ fn parse_expression_rec(token_stream: &mut TokenStream, curr_precedence: u8) -> 
                 UnaryOperatorNode::new(op_type, left_node).into()
 
             } else if *token == OpenBracket {
-                let args = parse_required_args(token_stream)?;
+                let args = parse_required_grouped_expression(token_stream, token)?;
                 IndexNode::new(left_node, args).into()
 
             } else if *token == OpenParen {
-                let args = parse_optional_args(token_stream)?;
+                let args = parse_optional_grouped_expression(token_stream, token)?;
                 FunctionCallNode::new(left_node, args).into()
 
             } else if *token == Dot {
@@ -295,7 +316,7 @@ fn parse_expression_rec(token_stream: &mut TokenStream, curr_precedence: u8) -> 
                 unreachable!("Led hook not implemented for {token}");
             }
         } else {
-            return Err(InvalidExpression(token.location.clone()));
+            return Err(InvalidExpression.at(token.location.clone()));
         }
     }
 

@@ -1,8 +1,8 @@
-use crate::error_util::SourceLocation;
+use crate::source::source_span::SourceSpan;
 use crate::lexer::token::TokenType::Identifier;
 use crate::lexer::token::{Token, TokenType};
-use crate::syntax::error::expected_token::ExpectedTokenError;
-use crate::syntax::error::SyntaxResult;
+use crate::error::spanned_error::WithSpan;
+use crate::syntax::error::{SyntaxErrorType, SyntaxResult};
 use std::iter::Peekable;
 use std::slice::Iter;
 
@@ -27,17 +27,15 @@ impl<'a> TokenStream<'a> {
         self.iter.peek().is_none()
     }
     
-    pub fn prev_location(&self) -> SourceLocation {
+    pub fn prev_location(&self) -> SourceSpan {
         self.prev.location.clone()
     }
 
-    pub fn next_token_of_type(&mut self, token_type: TokenType) -> SyntaxResult<&Token> {
+    pub fn expect_next_token(&mut self, token_type: TokenType) -> SyntaxResult<&Token> {
 
         match self.next() {
             None => {
-                Err(ExpectedTokenError::new(
-                    None, token_type, self.prev_location()
-                ).into())
+                Err(SyntaxErrorType::expected_token(None, token_type).at(self.prev_location()))
             },
 
             Some(token) => {
@@ -45,14 +43,14 @@ impl<'a> TokenStream<'a> {
                     Ok(token)
                 } else {
                     let location = token.location.clone();
-                    Err(ExpectedTokenError::new(Some(token.clone()), token_type, location).into())
+                    Err(SyntaxErrorType::expected_token(Some(token.clone()), token_type).at(location))
                 }
             },
         }
     }
     
-    pub fn next_identifier(&mut self) -> SyntaxResult<String> {
-        self.next_token_of_type(Identifier).map(|token| token.token_str.clone())
+    pub fn expect_next_identifier(&mut self) -> SyntaxResult<String> {
+        self.expect_next_token(Identifier).map(|token| token.token_str.clone())
     }
 
     pub fn next_matches(&mut self, token_type: TokenType) -> bool {
@@ -63,9 +61,7 @@ impl<'a> TokenStream<'a> {
 
         match self.peek() {
             None => {
-                Err(ExpectedTokenError::new(
-                    None, token_type, self.prev_location()
-                ).into())
+                Err(SyntaxErrorType::expected_token(None, token_type).at(self.prev_location()))
             }
 
             Some(&token) => {

@@ -1,24 +1,20 @@
-use thiserror::Error;
-use crate::error_util::SourceLocation;
 use crate::lexer::token::{Token, TokenType};
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub struct ExpectedTokenError {
     actual: Option<Token>,
     expected: TokenType,
-    error_location: SourceLocation,
 }
 
 impl ExpectedTokenError {
     pub fn new(
         actual: Option<Token>,
         expected: TokenType,
-        error_location: SourceLocation
     ) -> Self {
         Self {
             actual,
             expected,
-            error_location,
         }
     }
 }
@@ -26,14 +22,12 @@ impl ExpectedTokenError {
 impl std::fmt::Display for ExpectedTokenError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.actual {
-            None => write!(f, "{} expected\n{}",
+            None => write!(f, "{} expected",
                            self.expected,
-                           self.error_location
             ),
-            Some(token) => write!(f, "{} expected but got {}\n{}",
+            Some(token) => write!(f, "{} expected but got {}",
                                   self.expected,
                                   token,
-                                  self.error_location
             ),
         }
     }

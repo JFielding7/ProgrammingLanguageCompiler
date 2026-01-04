@@ -1,5 +1,5 @@
 use std::iter::Peekable;
-use crate::error_util::SourceLocation;
+use crate::source::source_span::SourceSpan;
 use crate::lexer::token::TokenType::Indent;
 use crate::lexer::token::{Token, TokenType};
 use crate::syntax::error::expected_token::ExpectedTokenError;

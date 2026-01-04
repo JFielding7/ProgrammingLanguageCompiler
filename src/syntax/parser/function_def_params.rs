@@ -4,7 +4,7 @@ use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::token_stream::TokenStream;
 
 pub fn parse_parameters(token_stream: &mut TokenStream) -> SyntaxResult<Vec<Parameter>> {
-    token_stream.next_token_of_type(OpenParen)?;
+    token_stream.expect_next_token(OpenParen)?;
 
     let mut params = Vec::new();
 
@@ -19,14 +19,14 @@ pub fn parse_parameters(token_stream: &mut TokenStream) -> SyntaxResult<Vec<Para
         params.push(parse_parameter(token_stream)?);
     }
 
-    token_stream.next_token_of_type(CloseParen)?;
+    token_stream.expect_next_token(CloseParen)?;
 
     Ok(params)
 }
 
 fn parse_parameter(token_stream: &mut TokenStream) -> SyntaxResult<Parameter> {
-    let param_type = token_stream.next_token_of_type(Identifier)?.token_str.clone();
-    let param_name = token_stream.next_token_of_type(Identifier)?.token_str.clone();
+    let param_type = token_stream.expect_next_token(Identifier)?.token_str.clone();
+    let param_name = token_stream.expect_next_token(Identifier)?.token_str.clone();
 
     Ok(Parameter::new(param_name, param_type))
 }

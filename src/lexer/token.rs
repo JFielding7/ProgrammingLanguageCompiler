@@ -1,13 +1,13 @@
 use std::mem::discriminant;
 use logos::Logos;
-use crate::error_util::SourceLocation;
+use crate::source::source_span::SourceSpan;
 use TokenType::*;
 
 #[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub token_str: String,
-    pub location: SourceLocation,
+    pub location: SourceSpan,
 }
 
 #[derive(Logos, Debug, Clone, PartialEq)]
@@ -134,7 +134,7 @@ pub enum TokenType {
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, token_str: String, location: SourceLocation) -> Self {
+    pub fn new(token_type: TokenType, token_str: String, location: SourceSpan) -> Self {
         Self { token_type, token_str, location }
     }
 
@@ -158,7 +158,7 @@ impl PartialEq<TokenType> for Token {
 
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.token_str.as_str())
+        f.write_str(&format!("'{}'", self.token_str))
     }
 }
 

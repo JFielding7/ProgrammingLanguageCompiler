@@ -1,3 +1,6 @@
+use std::iter::Peekable;
+use std::vec::IntoIter;
+use crate::error::spanned_error::WithSpan;
 use crate::lexer::token::TokenType;
 use crate::lexer::token::TokenType::*;
 use crate::syntax::ast::ast_node::ASTNode;
@@ -5,15 +8,14 @@ use crate::syntax::ast::for_node::ForNode;
 use crate::syntax::ast::function_def_node::FunctionDefNode;
 use crate::syntax::ast::if_node::{ConditionBlock, IfNode};
 use crate::syntax::ast::while_node::WhileNode;
-use crate::syntax::error::SyntaxError::IndentTooLarge;
 use crate::syntax::error::SyntaxResult;
+use crate::syntax::error::SyntaxErrorType::IndentTooLarge;
 use crate::syntax::parser::expression::parse_expression;
 use crate::syntax::parser::function_def_params::parse_parameters;
 use crate::syntax::parser::source_statements::SourceStatements;
 use crate::syntax::parser::statement::Statement;
 use crate::syntax::parser::token_stream::TokenStream;
-use std::iter::Peekable;
-use std::vec::IntoIter;
+
 
 pub struct ASTParser {
     source_statements_iter: Peekable<IntoIter<Statement>>,
@@ -42,7 +44,7 @@ impl ASTParser {
             }
 
             if indent_size + 1 < child.indent_size {
-                return Err(IndentTooLarge(child[0].location.clone()))
+                return Err(IndentTooLarge.at(child[0].location.clone()))
             }
 
             if let Some(child) = self.next_ast_node()? {
@@ -61,7 +63,7 @@ impl ASTParser {
 
         let mut token_stream = TokenStream::new(statement.suffix(TOKENS_BEFORE_NAME));
 
-        let name = token_stream.next_identifier()?;
+        let name = token_stream.expect_next_identifier()?;
         let params = parse_parameters(&mut token_stream)?;
         let body = self.parse_children(&statement)?;
 
@@ -114,8 +116,8 @@ impl ASTParser {
 
         let mut token_stream = TokenStream::new(for_statement.suffix(TOKENS_BEFORE_ITEM_IDENT));
 
-        let item_identifier = token_stream.next_identifier()?;
-        token_stream.next_token_of_type(In)?;
+        let item_identifier = token_stream.expect_next_identifier()?;
+        token_stream.expect_next_token(In)?;
         let iterator = parse_expression(token_stream)?;
         let for_body = self.parse_children(&for_statement)?;
 

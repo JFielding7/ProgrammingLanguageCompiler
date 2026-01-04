@@ -1,6 +1,4 @@
 use thiserror::Error;
-use crate::lexer::error::LexerError;
-use crate::syntax::error::SyntaxError;
 
 #[derive(Error, Debug)]
 pub enum CompilerError {
@@ -14,11 +12,10 @@ pub enum CompilerError {
         error: std::io::Error,
     },
 
-    #[error(transparent)]
-    Lexer(#[from] LexerError),
-
-    #[error(transparent)]
-    Syntax(#[from] SyntaxError),
+    #[error("Error: {message}")]
+    Spanned {
+        message: String
+    },
 }
 
-pub type CompilerResult<T> = Result<T, CompilerError>;
+pub type CompilerResult = Result<(), CompilerError>;

@@ -1,16 +1,15 @@
-use crate::lexer::error::invalid_token::InvalidTokenError;
-use crate::lexer::error::unaligned_indent::UnalignedIndentError;
-
-pub mod invalid_token;
-pub mod unaligned_indent;
+use crate::error::spanned_error::{SpannableError, SpannedError};
 
 #[derive(thiserror::Error, Debug)]
-pub enum LexerError {
-    #[error("Error: {0}")]
-    InvalidToken(#[from] InvalidTokenError),
+pub enum LexerErrorType {
+    #[error("Error: Unrecognized token: {0}")]
+    InvalidToken(String),
 
-    #[error("Error: {0}")]
-    UnalignedIndent(#[from] UnalignedIndentError),
+    #[error("Error: Unaligned Indent: Indent size {0} is not a multiple of 4")]
+    UnalignedIndent(usize),
 }
 
+impl SpannableError for LexerErrorType {}
+
+pub type LexerError = SpannedError<LexerErrorType>;
 pub type LexerResult<T> = Result<T, LexerError>;
