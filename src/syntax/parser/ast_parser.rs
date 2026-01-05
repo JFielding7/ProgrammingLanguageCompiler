@@ -3,7 +3,7 @@ use std::vec::IntoIter;
 use crate::error::spanned_error::WithSpan;
 use crate::lexer::token::TokenType;
 use crate::lexer::token::TokenType::*;
-use crate::syntax::ast::ast_node::ASTNode;
+use crate::syntax::ast::ast_node::{ASTNode, ASTNodeSpan};
 use crate::syntax::ast::for_node::ForNode;
 use crate::syntax::ast::function_def_node::FunctionDefNode;
 use crate::syntax::ast::if_node::{ConditionBlock, IfNode};
@@ -57,7 +57,7 @@ impl ASTParser {
 
     fn parse_function(
         &mut self,
-        statement: Statement,
+        statement: &Statement,
     ) -> SyntaxResult<FunctionDefNode> {
         const TOKENS_BEFORE_NAME: usize = 2;
 
@@ -70,7 +70,7 @@ impl ASTParser {
         Ok(FunctionDefNode::new(name, params, body))
     }
 
-    fn parse_if_statement(&mut self, if_statement: Statement) -> SyntaxResult<IfNode> {
+    fn parse_if_statement(&mut self, if_statement: &Statement) -> SyntaxResult<IfNode> {
         const TOKENS_BEFORE_COND: usize = 2;
 
         let if_cond = parse_expression(if_statement.suffix_token_stream(TOKENS_BEFORE_COND))?;
@@ -102,7 +102,7 @@ impl ASTParser {
         Ok(IfNode::new(condition_blocks, else_body))
     }
 
-    fn parse_while_loop(&mut self, while_statement: Statement) -> SyntaxResult<WhileNode> {
+    fn parse_while_loop(&mut self, while_statement: &Statement) -> SyntaxResult<WhileNode> {
         const TOKENS_BEFORE_COND: usize = 2;
 
         let while_cond = parse_expression(while_statement.suffix_token_stream(TOKENS_BEFORE_COND))?;
@@ -111,7 +111,7 @@ impl ASTParser {
         Ok(WhileNode::new(while_cond, while_body))
     }
 
-    fn parse_for_loop(&mut self, for_statement: Statement) -> SyntaxResult<ForNode> {
+    fn parse_for_loop(&mut self, for_statement: &Statement) -> SyntaxResult<ForNode> {
         const TOKENS_BEFORE_ITEM_IDENT: usize = 2;
 
         let mut token_stream = TokenStream::new(for_statement.suffix(TOKENS_BEFORE_ITEM_IDENT));
@@ -126,15 +126,16 @@ impl ASTParser {
 
     fn next_ast_node(&mut self) -> SyntaxResult<Option<ASTNode>> {
         
-        if let Some(statement) = self.source_statements_iter.next() {
+        if let Some(statement) = &self.source_statements_iter.next() {
+            let start_token_span = statement.start_token().span.clone();
 
-            match statement.start_token_type() {
-                Fn => Ok(Some(self.parse_function(statement)?.into())),
-                If => Ok(Some(self.parse_if_statement(statement)?.into())),
-                While => Ok(Some(self.parse_while_loop(statement)?.into())),
-                For => Ok(Some(self.parse_for_loop(statement)?.into())),
-                _ => Ok(Some(parse_expression(statement.suffix_token_stream(Statement::INDEX_AFTER_INDENT))?)),
-            }
+            Ok(Some(match statement.start_token_type() {
+                Fn => self.parse_function(statement)?.at(start_token_span),
+                 If => self.parse_if_statement(statement)?.at(start_token_span),
+                 While => self.parse_while_loop(statement)?.at(start_token_span),
+                 For => self.parse_for_loop(statement)?.at(start_token_span),
+                 _ => parse_expression(statement.suffix_token_stream(Statement::INDEX_AFTER_INDENT))?,
+            }))
         } else {
             Ok(None)
         }

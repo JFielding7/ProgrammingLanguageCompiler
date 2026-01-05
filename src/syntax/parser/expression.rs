@@ -1,14 +1,15 @@
+use crate::syntax::ast::ast_node::ASTNodeSpan;
+use crate::error::spanned_error::WithSpan;
 use crate::lexer::token::TokenType::*;
 use crate::lexer::token::{Token, TokenType};
-use crate::error::spanned_error::WithSpan;
 use crate::syntax::ast::access_node::{AccessNode, Member};
-use crate::syntax::ast::ast_node::ASTNode;
+use crate::syntax::ast::ast_node::{ASTNode, ASTNodeType};
 use crate::syntax::ast::binary_operator_node::{BinaryOperatorNode, BinaryOperatorType};
 use crate::syntax::ast::function_call_node::FunctionCallNode;
 use crate::syntax::ast::index_node::IndexNode;
 use crate::syntax::ast::unary_operator_node::{UnaryOperatorNode, UnaryOperatorType};
 use crate::syntax::error::SyntaxErrorType::InvalidExpression;
-use crate::syntax::error::{SyntaxError, SyntaxErrorType, SyntaxResult};
+use crate::syntax::error::{SyntaxErrorType, SyntaxResult};
 use crate::syntax::parser::expression::OperatorPrecedence::Prefix;
 use crate::syntax::parser::token_stream::TokenStream;
 
@@ -240,14 +241,17 @@ fn parse_accessed_member(token_stream: &mut TokenStream) -> SyntaxResult<Member>
 }
 
 fn parse_token(token: &Token) -> SyntaxResult<ASTNode> {
-    let token_string = token.to_string();
+    use ASTNodeType::*;
 
-    match token.token_type {
-        IntLiteral    => Ok(ASTNode::IntLiteral(token_string)),
-        StringLiteral => Ok(ASTNode::StringLiteral(token_string)),
-        Identifier    => Ok(ASTNode::Identifier(token_string)),
-        _ => Err(InvalidExpression.at(token.span.clone()))
-    }
+    let token_string = token.to_string();
+    let token_span = token.span.clone();
+
+    Ok(match token.token_type {
+        TokenType::IntLiteral    => ASTNode::new(IntLiteral(token_string), token_span),
+        TokenType::StringLiteral => ASTNode::new(StringLiteral(token_string), token_span),
+        TokenType::Identifier    => ASTNode::new(Identifier(token_string), token_span),
+        _ => return Err(InvalidExpression.at(token.span.clone()))
+    })
 }
 
 fn nud_hook(token_stream: &mut TokenStream) -> SyntaxResult<ASTNode> {
@@ -260,7 +264,7 @@ fn nud_hook(token_stream: &mut TokenStream) -> SyntaxResult<ASTNode> {
                 Ok(UnaryOperatorNode::new(
                     unary_op_type,
                     parse_expression_rec(token_stream, Prefix.as_u8())?
-                ).into())
+                ).at(token.span.clone()))
 
             } else if *token == OpenParen {
                 parse_required_grouped_expression(token_stream, token)
@@ -291,26 +295,27 @@ fn parse_expression_rec(token_stream: &mut TokenStream, curr_precedence: u8) -> 
                 return Ok(left_node)
             }
 
-            token_stream.next();
+             token_stream.next();
+            let token_span = token.span.clone();
 
             left_node = if let Some(op_type) = binary_operator_type(token) {
                 let right_node = parse_expression_rec(token_stream, right_precedence)?;
-                BinaryOperatorNode::new(op_type, left_node, right_node).into()
+                BinaryOperatorNode::new(op_type, left_node, right_node).at(token_span)
 
             } else if let Some(op_type) = postfix_unary_operator_type(token) {
-                UnaryOperatorNode::new(op_type, left_node).into()
+                UnaryOperatorNode::new(op_type, left_node).at(token_span)
 
             } else if *token == OpenBracket {
                 let args = parse_required_grouped_expression(token_stream, token)?;
-                IndexNode::new(left_node, args).into()
+                IndexNode::new(left_node, args).at(token_span)
 
             } else if *token == OpenParen {
                 let args = parse_optional_grouped_expression(token_stream, token)?;
-                FunctionCallNode::new(left_node, args).into()
+                FunctionCallNode::new(left_node, args).at(token_span)
 
             } else if *token == Dot {
                 let member = parse_accessed_member(token_stream)?;
-                AccessNode::new(left_node, member).into()
+                AccessNode::new(left_node, member).at(token_span)
 
             } else {
                 unreachable!("Led hook not implemented for {token}");

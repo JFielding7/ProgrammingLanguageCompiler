@@ -34,12 +34,16 @@ impl Statement {
         }
     }
 
-    pub fn start_token_type(&self) -> &TokenType {
+    pub fn start_token(&self) -> &Token {
         if self.len() > Self::INDEX_AFTER_INDENT {
-            &self[Self::INDEX_AFTER_INDENT].token_type
+            &self[Self::INDEX_AFTER_INDENT]
         } else {
             unreachable!("Statement must not be blank")
         }
+    }
+
+    pub fn start_token_type(&self) -> &TokenType {
+        &self.start_token().token_type
     }
 
     pub fn starts_with(&self, token_type: TokenType) -> bool {

@@ -9,7 +9,7 @@ pub mod function_call_node;
 pub mod while_node;
 pub mod for_node;
 
-use crate::syntax::ast::ast_node::ASTNode;
+use crate::syntax::ast::ast_node::{ASTNode, ASTNodeType};
 use crate::syntax::ast::function_def_node::FunctionDefNode;
 
 

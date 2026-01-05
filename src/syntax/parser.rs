@@ -1,5 +1,5 @@
 use crate::lexer::tokenizer::TokenizedLines;
-use crate::syntax::ast::ast_node::ASTNode::FunctionDef;
+use crate::syntax::ast::ast_node::ASTNodeType::FunctionDef;
 use crate::syntax::ast::AST;
 use crate::syntax::error::{SyntaxError, SyntaxResult};
 use crate::syntax::parser::ast_parser::ASTParser;
@@ -25,7 +25,7 @@ impl TryFrom<TokenizedLines> for AST {
         for node_res in ASTParser::new(statements) {
             let node = node_res?;
 
-            if let FunctionDef(function_def_node) = node {
+            if let FunctionDef(function_def_node) = node.node_type {
                 functions.push(function_def_node);
             } else {
                 top_level_code.push(node)
