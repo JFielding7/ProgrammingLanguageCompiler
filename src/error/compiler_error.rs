@@ -1,4 +1,8 @@
 use thiserror::Error;
+use crate::error::compiler_error::CompilerError::{Lexer, Syntax};
+use crate::lexer::error::LexerError;
+use crate::source::source_file::SourceFile;
+use crate::syntax::error::SyntaxError;
 
 #[derive(Error, Debug)]
 pub enum CompilerError {
@@ -12,10 +16,21 @@ pub enum CompilerError {
         error: std::io::Error,
     },
 
-    #[error("Error: {message}")]
-    Spanned {
-        message: String
-    },
+    #[error(transparent)]
+    Lexer(#[from] LexerError),
+
+    #[error(transparent)]
+    Syntax(#[from] SyntaxError),
+}
+
+impl CompilerError {
+    pub fn format(&self, curr_source_file: Option<SourceFile>) -> String {
+        match (self, curr_source_file) {
+            (Lexer(e), Some(src)) => e.format(src),
+            (Syntax(e), Some(src)) => e.format(src),
+            _ => self.to_string(),
+        }
+    }
 }
 
 pub type CompilerResult = Result<(), CompilerError>;

@@ -1,4 +1,4 @@
-use crate::lexer::tokenizer::SourceLines;
+use crate::lexer::tokenizer::TokenizedLines;
 use crate::syntax::ast::ast_node::ASTNode::FunctionDef;
 use crate::syntax::ast::AST;
 use crate::syntax::error::{SyntaxError, SyntaxResult};
@@ -12,10 +12,10 @@ mod expression;
 mod token_stream;
 mod ast_parser;
 
-impl TryFrom<SourceLines> for AST {
+impl TryFrom<TokenizedLines> for AST {
     type Error = SyntaxError;
 
-    fn try_from(source_lines: SourceLines) -> SyntaxResult<Self> {
+    fn try_from(source_lines: TokenizedLines) -> SyntaxResult<Self> {
 
         let statements: SourceStatements = source_lines.into();
 

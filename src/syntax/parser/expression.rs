@@ -196,7 +196,7 @@ fn assert_group_closed(token_stream: &mut TokenStream, open_token: &Token) -> Sy
         token_stream.next();
         Ok(())
     } else {
-        Err(SyntaxErrorType::unmatched_paren(open_token.token_type.clone()).at(open_token.location.clone()))
+        Err(SyntaxErrorType::unmatched_paren(open_token.token_type.clone()).at(open_token.span.clone()))
     }
 }
 
@@ -246,14 +246,14 @@ fn parse_token(token: &Token) -> SyntaxResult<ASTNode> {
         IntLiteral    => Ok(ASTNode::IntLiteral(token_string)),
         StringLiteral => Ok(ASTNode::StringLiteral(token_string)),
         Identifier    => Ok(ASTNode::Identifier(token_string)),
-        _ => Err(InvalidExpression.at(token.location.clone()))
+        _ => Err(InvalidExpression.at(token.span.clone()))
     }
 }
 
 fn nud_hook(token_stream: &mut TokenStream) -> SyntaxResult<ASTNode> {
 
     match token_stream.next() {
-        None => Err(InvalidExpression.at(token_stream.prev_location())),
+        None => Err(InvalidExpression.at(token_stream.prev_span())),
 
         Some(token) => {
             if let Some(unary_op_type) = prefix_unary_operator_type(token) {
@@ -275,7 +275,7 @@ fn nud_hook(token_stream: &mut TokenStream) -> SyntaxResult<ASTNode> {
 fn parse_expression_rec(token_stream: &mut TokenStream, curr_precedence: u8) -> SyntaxResult<ASTNode> {
 
     if token_stream.empty() {
-        return Err(InvalidExpression.at(token_stream.prev_location()))
+        return Err(InvalidExpression.at(token_stream.prev_span()))
     }
 
     let mut left_node = nud_hook(token_stream)?;
@@ -316,7 +316,7 @@ fn parse_expression_rec(token_stream: &mut TokenStream, curr_precedence: u8) -> 
                 unreachable!("Led hook not implemented for {token}");
             }
         } else {
-            return Err(InvalidExpression.at(token.location.clone()));
+            return Err(InvalidExpression.at(token.span.clone()));
         }
     }
 

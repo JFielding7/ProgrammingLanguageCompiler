@@ -5,79 +5,91 @@ use crate::lexer::token::TokenType::Indent;
 use crate::lexer::token::{Token, TokenType};
 use crate::error::spanned_error::WithSpan;
 use logos::Logos;
+use crate::source::source_file::SourceFile;
 
-type Line = Vec<Token>;
+type LineTokens = Vec<Token>;
 
-pub struct SourceLines {
-    lines: Vec<Line>,
+pub struct TokenizedLines {
+    lines: Vec<LineTokens>,
 }
 
-impl IntoIterator for SourceLines {
-    type Item = Line;
-    type IntoIter = std::vec::IntoIter<Line>;
+impl IntoIterator for TokenizedLines {
+    type Item = LineTokens;
+    type IntoIter = std::vec::IntoIter<LineTokens>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.lines.into_iter()
     }
 }
 
-fn get_indent_token(line_index: usize, line: &str) -> LexerResult<Token> {
-    const INDENT_SIZE: usize = 4;
+struct Line<'a> {
+    index: usize,
+    content: &'a str,
+}
 
-    let indent = line.chars().take_while(|&c| c == ' ').collect::<String>();
-    let indent_spaces = indent.len();
-    let location = SourceSpan::new(line_index, 0, indent_spaces);
+impl<'a> Line<'a> {
+    fn new(index: usize, content: &'a str) -> Self {
+        Line { index, content }
+    }
 
-    if (indent_spaces % INDENT_SIZE) != 0 {
-        Err(UnalignedIndent(indent_spaces).at(location))
-    } else {
-        Ok(Token::new(
-            Indent(indent_spaces / INDENT_SIZE),
-            indent,
-            location
-        ))
+    fn get_indent_token(&self) -> LexerResult<Token> {
+        const INDENT_SIZE: usize = 4;
+
+        let indent = self.content.chars().take_while(|&c| c == ' ').collect::<String>();
+        let indent_spaces = indent.len();
+        let span = SourceSpan::new(self.index, 0, indent_spaces);
+
+        if (indent_spaces % INDENT_SIZE) != 0 {
+            Err(UnalignedIndent(indent_spaces).at(span))
+        } else {
+            Ok(Token::new(
+                Indent(indent_spaces / INDENT_SIZE),
+                indent,
+                span
+            ))
+        }
+    }
+
+    fn tokenize(&self) -> LexerResult<LineTokens> {
+
+        let mut tokens = vec![
+            self.get_indent_token()?
+        ];
+
+        let mut lexer = TokenType::lexer(self.content);
+
+        while let Some(next_token) = lexer.next() {
+            let span = lexer.span();
+            let string = lexer.slice().to_string();
+
+            let source_span = SourceSpan::new(
+                self.index, span.start, span.end
+            );
+
+            let token_type = next_token
+                .map_err(|_| {
+                    InvalidToken(string).at(source_span.clone())
+                })?;
+
+            tokens.push(Token::new(
+                token_type,
+                lexer.slice().to_string(),
+                source_span
+            ));
+        }
+
+        Ok(tokens)
     }
 }
 
-fn tokenize_line(line_index: usize, line: &str) -> LexerResult<Line> {
-    
-    let mut tokens = vec![
-        get_indent_token(line_index, line)?
-    ];
+pub fn lex(source_code: &SourceFile) -> LexerResult<TokenizedLines> {
 
-    let mut lexer = TokenType::lexer(line);
-
-    while let Some(next_token) = lexer.next() {
-        let span = lexer.span();
-        let string = lexer.slice().to_string();
-
-        let location = SourceSpan::new(
-            line_index, span.start, span.end
-        );
-
-        let token_type = next_token
-            .map_err(|_| {
-                InvalidToken(string).at(location.clone())
-            })?;
-        
-        tokens.push(Token::new(
-            token_type,
-            lexer.slice().to_string(),
-            location
-        ));
-    }
-
-    Ok(tokens)
-}
-
-pub fn lex(src: String) -> LexerResult<SourceLines> {
-
-    let lines = src.lines()
+    let lines = source_code.into_iter()
         .enumerate()
-        .map(|(i, line)| tokenize_line(i, line))
-        .collect::<LexerResult<Vec<Line>>>()?;
+        .map(|(i, content)| Line::new(i, content).tokenize())
+        .collect::<LexerResult<Vec<LineTokens>>>()?;
 
-    Ok(SourceLines {
+    Ok(TokenizedLines {
         lines,
     })
 }

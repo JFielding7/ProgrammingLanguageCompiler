@@ -16,11 +16,9 @@ impl<T: SpannableError> SpannedError<T> {
             error_type, span
         }
     }
-    
-    pub fn compiler_error(self, file: &SourceFile) -> CompilerError {
-        CompilerError::Spanned {
-            message: format!("{}\n{}", self, self.span.format_source_location(file))
-        }
+
+    pub fn format(&self, source_file: SourceFile) -> String {
+        format!("{}\n{}", self, self.span.format_source_span(source_file))
     }
 }
 

@@ -7,7 +7,7 @@ use TokenType::*;
 pub struct Token {
     pub token_type: TokenType,
     pub token_str: String,
-    pub location: SourceSpan,
+    pub span: SourceSpan,
 }
 
 #[derive(Logos, Debug, Clone, PartialEq)]
@@ -119,7 +119,7 @@ pub enum TokenType {
 
     #[regex(r"[0-9]+")]
     IntLiteral,
-    #[regex(r#""[^"]*""#)]
+    #[regex(r#""(\"|[^"])*""#)]
     StringLiteral,
 
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*")]
@@ -134,8 +134,8 @@ pub enum TokenType {
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, token_str: String, location: SourceSpan) -> Self {
-        Self { token_type, token_str, location }
+    pub fn new(token_type: TokenType, token_str: String, span: SourceSpan) -> Self {
+        Self { token_type, token_str, span }
     }
 
     pub fn is_legal_statement_boundary(&self) -> bool {

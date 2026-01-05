@@ -44,7 +44,7 @@ impl ASTParser {
             }
 
             if indent_size + 1 < child.indent_size {
-                return Err(IndentTooLarge.at(child[0].location.clone()))
+                return Err(IndentTooLarge.at(child[0].span.clone()))
             }
 
             if let Some(child) = self.next_ast_node()? {

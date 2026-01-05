@@ -27,23 +27,23 @@ impl<'a> TokenStream<'a> {
         self.iter.peek().is_none()
     }
     
-    pub fn prev_location(&self) -> SourceSpan {
-        self.prev.location.clone()
+    pub fn prev_span(&self) -> SourceSpan {
+        self.prev.span.clone()
     }
 
     pub fn expect_next_token(&mut self, token_type: TokenType) -> SyntaxResult<&Token> {
 
         match self.next() {
             None => {
-                Err(SyntaxErrorType::expected_token(None, token_type).at(self.prev_location()))
+                Err(SyntaxErrorType::expected_token(None, token_type).at(self.prev_span()))
             },
 
             Some(token) => {
                 if *token == token_type {
                     Ok(token)
                 } else {
-                    let location = token.location.clone();
-                    Err(SyntaxErrorType::expected_token(Some(token.clone()), token_type).at(location))
+                    let span = token.span.clone();
+                    Err(SyntaxErrorType::expected_token(Some(token.clone()), token_type).at(span))
                 }
             },
         }
@@ -61,7 +61,7 @@ impl<'a> TokenStream<'a> {
 
         match self.peek() {
             None => {
-                Err(SyntaxErrorType::expected_token(None, token_type).at(self.prev_location()))
+                Err(SyntaxErrorType::expected_token(None, token_type).at(self.prev_span()))
             }
 
             Some(&token) => {

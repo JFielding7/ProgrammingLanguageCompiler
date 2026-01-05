@@ -1,4 +1,4 @@
-use crate::lexer::tokenizer::SourceLines;
+use crate::lexer::tokenizer::TokenizedLines;
 use crate::syntax::parser::statement::Statement;
 use std::iter::Peekable;
 use std::vec::IntoIter;
@@ -7,8 +7,8 @@ pub struct SourceStatements {
     statements: Vec<Statement>
 }
 
-impl From<SourceLines> for SourceStatements {
-    fn from(source_lines: SourceLines) -> Self {
+impl From<TokenizedLines> for SourceStatements {
+    fn from(source_lines: TokenizedLines) -> Self {
 
         let mut statements = Vec::new();
         let mut curr_statement_tokens = Vec::new();
