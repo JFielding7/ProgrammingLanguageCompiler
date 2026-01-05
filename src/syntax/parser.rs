@@ -11,6 +11,7 @@ mod source_statements;
 mod expression;
 mod token_stream;
 mod ast_parser;
+mod type_annotation_parser;
 
 impl TryFrom<TokenizedLines> for AST {
     type Error = SyntaxError;

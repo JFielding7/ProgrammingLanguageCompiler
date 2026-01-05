@@ -109,10 +109,14 @@ pub enum TokenType {
     OpenParen,
     #[token(")")]
     CloseParen,
+
     #[token("[")]
     OpenBracket,
     #[token("]")]
     CloseBracket,
+
+    #[token(":")]
+    Colon,
 
     #[token(",")]
     Comma,
@@ -170,6 +174,8 @@ impl std::fmt::Display for TokenType {
             CloseParen => "')'",
             Comma => "','",
             In => "'in'",
+            Greater => "'>'",
+            Less => "'<'",
             Indent(_) => "Indent",
             _ => ""
         })

@@ -14,11 +14,21 @@ use crate::syntax::ast::while_node::WhileNode;
 pub struct ASTNode {
     pub node_type: ASTNodeType,
     pub span: SourceSpan,
+    pub type_annotation: Option<TypeAnnotation>,
 }
 
 impl ASTNode {
     pub fn new(node_type: ASTNodeType, span: SourceSpan) -> Self {
-        Self { node_type, span }
+        Self { 
+            node_type, 
+            span,
+            type_annotation: None,
+        }
+    }
+
+    pub fn annotate_type(mut self, type_annotation: Option<TypeAnnotation>) -> Self {
+        self.type_annotation = type_annotation;
+        self
     }
 }
 
@@ -30,11 +40,34 @@ pub trait ASTNodeSpan {
 }
 
 #[derive(Debug)]
+pub struct TypeAnnotation {
+    type_name: String,
+    inner_types: Option<Vec<TypeAnnotation>>,
+}
+
+impl TypeAnnotation {
+    pub fn new(type_name: String) -> Self {
+        Self {
+            type_name,
+            inner_types: None,
+        }
+    }
+    
+    pub fn with_params(type_name: String, inner_types: Vec<TypeAnnotation>) -> Self {
+        Self {
+            type_name,
+            inner_types: Some(inner_types),
+        }
+    }
+    
+}
+
+#[derive(Debug)]
 pub enum ASTNodeType {
     IntLiteral(String),
     StringLiteral(String),
 
-    Identifier(String),
+    Variable(String),
 
     UnaryOperator(UnaryOperatorNode),
 

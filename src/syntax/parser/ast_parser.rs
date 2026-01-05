@@ -1,5 +1,3 @@
-use std::iter::Peekable;
-use std::vec::IntoIter;
 use crate::error::spanned_error::WithSpan;
 use crate::lexer::token::TokenType;
 use crate::lexer::token::TokenType::*;
@@ -8,13 +6,14 @@ use crate::syntax::ast::for_node::ForNode;
 use crate::syntax::ast::function_def_node::FunctionDefNode;
 use crate::syntax::ast::if_node::{ConditionBlock, IfNode};
 use crate::syntax::ast::while_node::WhileNode;
-use crate::syntax::error::SyntaxResult;
 use crate::syntax::error::SyntaxErrorType::IndentTooLarge;
+use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::expression::parse_expression;
 use crate::syntax::parser::function_def_params::parse_parameters;
 use crate::syntax::parser::source_statements::SourceStatements;
 use crate::syntax::parser::statement::Statement;
-use crate::syntax::parser::token_stream::TokenStream;
+use std::iter::Peekable;
+use std::vec::IntoIter;
 
 
 pub struct ASTParser {
@@ -61,7 +60,7 @@ impl ASTParser {
     ) -> SyntaxResult<FunctionDefNode> {
         const TOKENS_BEFORE_NAME: usize = 2;
 
-        let mut token_stream = TokenStream::new(statement.suffix(TOKENS_BEFORE_NAME));
+        let mut token_stream = statement.suffix_token_stream(TOKENS_BEFORE_NAME);
 
         let name = token_stream.expect_next_identifier()?;
         let params = parse_parameters(&mut token_stream)?;
@@ -114,7 +113,7 @@ impl ASTParser {
     fn parse_for_loop(&mut self, for_statement: &Statement) -> SyntaxResult<ForNode> {
         const TOKENS_BEFORE_ITEM_IDENT: usize = 2;
 
-        let mut token_stream = TokenStream::new(for_statement.suffix(TOKENS_BEFORE_ITEM_IDENT));
+        let mut token_stream = for_statement.suffix_token_stream(TOKENS_BEFORE_ITEM_IDENT);
 
         let item_identifier = token_stream.expect_next_identifier()?;
         token_stream.expect_next_token(In)?;

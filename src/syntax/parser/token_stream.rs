@@ -56,19 +56,6 @@ impl<'a> TokenStream<'a> {
     pub fn next_matches(&mut self, token_type: TokenType) -> bool {
         self.peek().is_some_and(|&token| *token == token_type)
     }
-
-    pub fn required_next_matches(&mut self, token_type: TokenType) -> SyntaxResult<bool> {
-
-        match self.peek() {
-            None => {
-                Err(SyntaxErrorType::expected_token(None, token_type).at(self.prev_span()))
-            }
-
-            Some(&token) => {
-                Ok(*token == token_type)
-            }
-        }
-    }
 }
 
 impl<'a> Iterator for TokenStream<'a> {

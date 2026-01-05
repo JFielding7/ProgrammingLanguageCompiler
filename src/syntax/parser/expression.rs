@@ -1,9 +1,9 @@
-use crate::syntax::ast::ast_node::ASTNodeSpan;
 use crate::error::spanned_error::WithSpan;
 use crate::lexer::token::TokenType::*;
 use crate::lexer::token::{Token, TokenType};
 use crate::syntax::ast::access_node::{AccessNode, Member};
 use crate::syntax::ast::ast_node::{ASTNode, ASTNodeType};
+use crate::syntax::ast::ast_node::ASTNodeSpan;
 use crate::syntax::ast::binary_operator_node::{BinaryOperatorNode, BinaryOperatorType};
 use crate::syntax::ast::function_call_node::FunctionCallNode;
 use crate::syntax::ast::index_node::IndexNode;
@@ -12,6 +12,7 @@ use crate::syntax::error::SyntaxErrorType::InvalidExpression;
 use crate::syntax::error::{SyntaxErrorType, SyntaxResult};
 use crate::syntax::parser::expression::OperatorPrecedence::Prefix;
 use crate::syntax::parser::token_stream::TokenStream;
+use crate::syntax::parser::type_annotation_parser::parse_type_annotation;
 
 #[repr(u8)]
 #[derive(Copy, Clone)]
@@ -179,7 +180,7 @@ fn postfix_unary_operator_type(op: &Token) -> Option<UnaryOperatorType> {
 }
 
 fn is_terminal(token: &Token) -> bool {
-    matches!(token.token_type, CloseParen | CloseBracket)
+    matches!(token.token_type, CloseParen | CloseBracket | Colon)
 }
 
 fn close_token(open_token: &Token) -> TokenType {
@@ -249,7 +250,7 @@ fn parse_token(token: &Token) -> SyntaxResult<ASTNode> {
     Ok(match token.token_type {
         TokenType::IntLiteral    => ASTNode::new(IntLiteral(token_string), token_span),
         TokenType::StringLiteral => ASTNode::new(StringLiteral(token_string), token_span),
-        TokenType::Identifier    => ASTNode::new(Identifier(token_string), token_span),
+        TokenType::Identifier    => ASTNode::new(Variable(token_string), token_span),
         _ => return Err(InvalidExpression.at(token.span.clone()))
     })
 }
@@ -287,7 +288,9 @@ fn parse_expression_rec(token_stream: &mut TokenStream, curr_precedence: u8) -> 
     while let Some(&token) = token_stream.peek() {
 
         if is_terminal(token) {
-            return Ok(left_node);
+            return Ok(left_node.annotate_type(
+                parse_type_annotation(token_stream, token)?)
+            );
         }
 
         if let Some((left_precedence, right_precedence)) = operators_with_lhs_precedence(token) {

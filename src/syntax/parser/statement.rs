@@ -50,12 +50,12 @@ impl Statement {
         self.start_token_type() == &token_type
     }
 
-    pub fn suffix(&self, start: usize) -> &[Token] {
+    fn suffix(&self, start: usize) -> &[Token] {
         &self.tokens[start..]
     }
 
     pub fn suffix_token_stream(&self, start: usize) -> TokenStream<'_> {
-        TokenStream::new(&self.tokens[start..])
+        TokenStream::new(self.suffix(start))
     }
 }
 
