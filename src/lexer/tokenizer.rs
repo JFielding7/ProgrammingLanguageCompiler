@@ -1,26 +1,11 @@
-use crate::source::source_span::SourceSpan;
+use crate::error::spanned_error::SpannableError;
 use crate::lexer::error::LexerErrorType::{InvalidToken, UnalignedIndent};
 use crate::lexer::error::LexerResult;
 use crate::lexer::token::TokenType::Indent;
 use crate::lexer::token::{Token, TokenType};
-use crate::error::spanned_error::WithSpan;
-use logos::Logos;
 use crate::source::source_file::SourceFile;
-
-type LineTokens = Vec<Token>;
-
-pub struct TokenizedLines {
-    lines: Vec<LineTokens>,
-}
-
-impl IntoIterator for TokenizedLines {
-    type Item = LineTokens;
-    type IntoIter = std::vec::IntoIter<LineTokens>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.lines.into_iter()
-    }
-}
+use crate::source::source_span::SourceSpan;
+use logos::Logos;
 
 struct Line<'a> {
     index: usize,
@@ -82,14 +67,30 @@ impl<'a> Line<'a> {
     }
 }
 
-pub fn lex(source_code: &SourceFile) -> LexerResult<TokenizedLines> {
+type LineTokens = Vec<Token>;
 
-    let lines = source_code.into_iter()
-        .enumerate()
-        .map(|(i, content)| Line::new(i, content).tokenize())
-        .collect::<LexerResult<Vec<LineTokens>>>()?;
+pub struct TokenizedLines {
+    lines: Vec<LineTokens>,
+}
 
-    Ok(TokenizedLines {
-        lines,
-    })
+impl IntoIterator for TokenizedLines {
+    type Item = LineTokens;
+    type IntoIter = std::vec::IntoIter<LineTokens>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.lines.into_iter()
+    }
+}
+
+impl TokenizedLines {
+    pub fn from_source_file(source_file: &SourceFile) -> LexerResult<Self> {
+        let lines = source_file.into_iter()
+            .enumerate()
+            .map(|(i, content)| Line::new(i, content).tokenize())
+            .collect::<LexerResult<Vec<LineTokens>>>()?;
+
+        Ok(TokenizedLines {
+            lines,
+        })
+    }
 }

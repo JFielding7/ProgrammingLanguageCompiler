@@ -1,13 +1,13 @@
-use crate::error::spanned_error::WithSpan;
 use crate::lexer::token::TokenType::*;
 use crate::lexer::token::{Token, TokenType};
 use crate::ast::access_node::{AccessNode, Member};
-use crate::ast::ast_arena::{ASTArena, ASTNodeId};
-use crate::ast::ast_node::{ASTNode, ASTNodeType};
+use crate::ast::arena_ast::{ASTNodeId, AST};
+use crate::ast::ast_node::{ASTNode, SpannableASTNode, ASTNodeType};
 use crate::ast::binary_operator_node::{BinaryOperatorNode, BinaryOperatorType};
 use crate::ast::function_call_node::FunctionCallNode;
 use crate::ast::index_node::IndexNode;
 use crate::ast::unary_operator_node::{UnaryOperatorNode, UnaryOperatorType};
+use crate::error::spanned_error::SpannableError;
 use crate::syntax::error::SyntaxErrorType::InvalidExpression;
 use crate::syntax::error::{SyntaxErrorType, SyntaxResult};
 use crate::syntax::parser::expression::OperatorPrecedence::Prefix;
@@ -195,14 +195,14 @@ fn close_token(open_token: &Token) -> TokenType {
 
 pub struct ExpressionParser<'a> {
     token_stream: &'a mut TokenStream<'a>,
-    ast_arena: &'a mut ASTArena,
+    ast: &'a mut AST,
 }
 
 impl<'a> ExpressionParser<'a> {
-    pub fn new(token_stream: &'a mut TokenStream<'a>, ast_arena: &'a mut ASTArena) -> Self {
+    pub fn new(token_stream: &'a mut TokenStream<'a>, ast: &'a mut AST) -> Self {
         Self {
             token_stream,
-            ast_arena,
+            ast,
         }
     }
 
@@ -210,16 +210,16 @@ impl<'a> ExpressionParser<'a> {
         use ASTNodeType::*;
 
         let token_string = token.to_string();
-        let token_span = token.span.clone();
+        let token_span = token.span;
 
         let node = match token.token_type {
             TokenType::IntLiteral    => ASTNode::new(IntLiteral(token_string), token_span),
             TokenType::StringLiteral => ASTNode::new(StringLiteral(token_string), token_span),
-            TokenType::Identifier    => ASTNode::new(Variable(token_string), token_span),
-            _ => return Err(InvalidExpression.at(token.span.clone()))
+            Identifier               => ASTNode::new(Variable(token_string), token_span),
+            _ => return Err(InvalidExpression.at(token.span))
         };
 
-        Ok(self.ast_arena.add_node(node))
+        Ok(self.ast.add_node(node))
     }
 
     fn assert_group_closed(&mut self, open_token: &Token) -> SyntaxResult<()> {
@@ -227,7 +227,7 @@ impl<'a> ExpressionParser<'a> {
             self.token_stream.next();
             Ok(())
         } else {
-            Err(SyntaxErrorType::unmatched_paren(open_token.token_type.clone()).at(open_token.span.clone()))
+            Err(SyntaxErrorType::unmatched_paren(open_token.token_type).at(open_token.span))
         }
     }
 
@@ -280,8 +280,8 @@ impl<'a> ExpressionParser<'a> {
                     let unary_node = UnaryOperatorNode::new(
                         unary_op_type,
                         self.parse_expression_rec(Prefix.as_u8())?
-                    );
-                    Ok(self.ast_arena.add_with_span(unary_node, token.span.clone()))
+                    ).at(token.span);
+                    Ok(self.ast.add_node(unary_node))
 
                 } else if *token == OpenParen {
                     self.parse_required_grouped_expression(token)
@@ -311,7 +311,7 @@ impl<'a> ExpressionParser<'a> {
                     None
                 };
 
-                return Ok(self.ast_arena.annotate(left_node, type_annotation));
+                return Ok(self.ast.annotate(left_node, type_annotation));
             }
 
             if let Some((left_precedence, right_precedence)) = operators_with_lhs_precedence(token) {
@@ -320,42 +320,41 @@ impl<'a> ExpressionParser<'a> {
                 }
 
                 self.token_stream.next();
-                let token_span = token.span.clone();
+                let token_span = token.span;
 
-                left_node = if let Some(op_type) = binary_operator_type(token) {
+                let node = if let Some(op_type) = binary_operator_type(token) {
                     let right_node = self.parse_expression_rec(right_precedence)?;
-                    self.ast_arena.add_with_span(BinaryOperatorNode::new(op_type, left_node, right_node), token_span)
+                    BinaryOperatorNode::new(op_type, left_node, right_node).at(token_span)
 
                 } else if let Some(op_type) = postfix_unary_operator_type(token) {
-                    self.ast_arena.add_with_span(UnaryOperatorNode::new(op_type, left_node), token_span)
+                    UnaryOperatorNode::new(op_type, left_node).at(token_span)
 
                 } else if *token == OpenBracket {
                     let args = self.parse_required_grouped_expression(token)?;
-                    self.ast_arena.add_with_span(IndexNode::new(left_node, args), token_span)
+                    IndexNode::new(left_node, args).at(token_span)
 
                 } else if *token == OpenParen {
                     let args = self.parse_optional_grouped_expression(token)?;
-                    self.ast_arena.add_with_span(FunctionCallNode::new(left_node, args), token_span)
+                    FunctionCallNode::new(left_node, args).at(token_span)
 
                 } else if *token == Dot {
                     let member = self.parse_accessed_member()?;
-                    self.ast_arena.add_with_span(AccessNode::new(left_node, member), token_span)
+                    AccessNode::new(left_node, member).at(token_span)
 
                 } else {
                     unreachable!("Led hook not implemented for {token}");
                 };
+
+                left_node = self.ast.add_node(node);
             } else {
-                return Err(InvalidExpression.at(token.span.clone()));
+                return Err(InvalidExpression.at(token.span));
             }
         }
 
         Ok(left_node)
     }
 
-    pub fn parse(token_stream: &'a mut TokenStream<'a>, ast_arena: &'a mut ASTArena) -> SyntaxResult<ASTNodeId> {
-        let mut parser = ExpressionParser::new(token_stream, ast_arena);
-        parser.parse_expression_rec(0)
+    pub fn parse(token_stream: &'a mut TokenStream<'a>, ast_arena: &'a mut AST) -> SyntaxResult<ASTNodeId> {
+        ExpressionParser::new(token_stream, ast_arena).parse_expression_rec(0)
     }
 }
-
-

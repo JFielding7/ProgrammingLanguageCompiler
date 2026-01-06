@@ -1,4 +1,4 @@
-use crate::ast::ast_arena::ASTNodeId;
+use crate::ast::arena_ast::ASTNodeId;
 use crate::ast::type_annotation::TypeAnnotation;
 
 #[derive(Debug)]

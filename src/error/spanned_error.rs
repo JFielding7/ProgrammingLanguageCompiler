@@ -1,4 +1,3 @@
-use crate::error::compiler_error::CompilerError;
 use crate::source::source_file::SourceFile;
 use crate::source::source_span::SourceSpan;
 use thiserror::Error;
@@ -11,7 +10,7 @@ pub struct SpannedError<T: SpannableError> {
 }
 
 impl<T: SpannableError> SpannedError<T> {
-    pub fn new(error_type: T, span: SourceSpan) -> Self {
+    fn new(error_type: T, span: SourceSpan) -> Self {
         Self {
             error_type, span
         }
@@ -22,13 +21,9 @@ impl<T: SpannableError> SpannedError<T> {
     }
 }
 
-pub trait SpannableError: std::error::Error {}
-
-pub trait WithSpan: SpannableError {
-    fn at(self, span: SourceSpan) -> SpannedError<Self> 
+pub trait SpannableError: std::error::Error {
+    fn at(self, span: SourceSpan) -> SpannedError<Self>
     where Self: Sized {
         SpannedError::new(self, span)
     }
 }
-
-impl<T: SpannableError> WithSpan for T {}

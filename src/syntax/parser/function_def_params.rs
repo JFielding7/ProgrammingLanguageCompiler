@@ -4,6 +4,14 @@ use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::token_stream::TokenStream;
 use crate::syntax::parser::type_annotation::parse_type_annotation;
 
+fn parse_parameter(token_stream: &mut TokenStream) -> SyntaxResult<Parameter> {
+    let param_name = token_stream.expect_next_token(Identifier)?.token_str.clone();
+    token_stream.expect_next_token(Colon)?;
+    let type_annotation = parse_type_annotation(token_stream)?;
+
+    Ok(Parameter::new(param_name, type_annotation))
+}
+
 pub fn parse_parameters(token_stream: &mut TokenStream) -> SyntaxResult<Vec<Parameter>> {
     token_stream.expect_next_token(OpenParen)?;
 
@@ -23,12 +31,4 @@ pub fn parse_parameters(token_stream: &mut TokenStream) -> SyntaxResult<Vec<Para
     token_stream.expect_next_token(CloseParen)?;
 
     Ok(params)
-}
-
-fn parse_parameter(token_stream: &mut TokenStream) -> SyntaxResult<Parameter> {
-    let param_name = token_stream.expect_next_token(Identifier)?.token_str.clone();
-    token_stream.expect_next_token(Colon)?;
-    let type_annotation = parse_type_annotation(token_stream)?;
-
-    Ok(Parameter::new(param_name, type_annotation))
 }

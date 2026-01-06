@@ -1,12 +1,9 @@
-use std::iter::Peekable;
-use crate::source::source_span::SourceSpan;
 use crate::lexer::token::TokenType::Indent;
 use crate::lexer::token::{Token, TokenType};
-use crate::syntax::error::expected_token::ExpectedTokenError;
-use crate::syntax::error::SyntaxResult;
+use crate::source::source_span::SourceSpan;
+use crate::syntax::parser::token_stream::TokenStream;
 use std::ops::Deref;
 use std::vec::IntoIter;
-use crate::syntax::parser::token_stream::TokenStream;
 
 pub struct Statement {
     pub indent_size: usize,
@@ -18,12 +15,12 @@ impl Statement {
     
     pub fn new(tokens: Vec<Token>) -> Self {
         Self {
-            indent_size: Self::indent_size(&tokens),
+            indent_size: Self::extract_indent_size(&tokens),
             tokens,
         }
     }
 
-    fn indent_size(tokens: &Vec<Token>) -> usize {
+    fn extract_indent_size(tokens: &Vec<Token>) -> usize {
         let first_token = tokens
             .first()
             .expect("Statement must have at least one token");
@@ -34,33 +31,29 @@ impl Statement {
         }
     }
 
-    pub fn start_token(&self) -> &Token {
+    pub fn token_after_indent(&self) -> &Token {
         &self[Self::INDEX_AFTER_INDENT]
     }
 
+    pub fn token_after_indent_type(&self) -> &TokenType {
+        &self.token_after_indent().token_type
+    }
+
+    pub fn token_after_indent_matches(&self, token_type: TokenType) -> bool {
+        self.token_after_indent_type() == &token_type
+    }
+
     pub fn last_token(&self) -> &Token {
-        &self[self.len() - 1]
+        self.last().expect("Statement must have at least one token")
     }
     
     pub fn full_span(&self) -> SourceSpan {
-        let start_span = &self.start_token().span;
+        let start_span = &self.token_after_indent().span;
         SourceSpan::new(start_span.line_index, start_span.start, self.last_token().span.end)
     }
 
-    pub fn start_token_type(&self) -> &TokenType {
-        &self.start_token().token_type
-    }
-
-    pub fn starts_with(&self, token_type: TokenType) -> bool {
-        self.start_token_type() == &token_type
-    }
-
-    fn suffix(&self, start: usize) -> &[Token] {
-        &self.tokens[start..]
-    }
-
-    pub fn suffix_token_stream(&self, start: usize) -> TokenStream<'_> {
-        TokenStream::new(self.suffix(start))
+    pub fn suffix_stream(&self, start: usize) -> TokenStream<'_> {
+        TokenStream::new(&self[start..])
     }
 }
 

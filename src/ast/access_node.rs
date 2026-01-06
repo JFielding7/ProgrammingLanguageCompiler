@@ -1,5 +1,5 @@
 use crate::ast::access_node::Member::Field;
-use crate::ast::ast_arena::ASTNodeId;
+use crate::ast::arena_ast::ASTNodeId;
 
 #[derive(Debug)]
 pub struct AccessNode {

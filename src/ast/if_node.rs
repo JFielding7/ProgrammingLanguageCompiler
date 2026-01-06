@@ -1,4 +1,4 @@
-use crate::ast::ast_arena::ASTNodeId;
+use crate::ast::arena_ast::ASTNodeId;
 
 #[derive(Debug)]
 pub struct IfNode {

@@ -1,6 +1,6 @@
 use crate::source::source_file::SourceFile;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct SourceSpan {
     pub line_index: usize,
     pub start: usize,

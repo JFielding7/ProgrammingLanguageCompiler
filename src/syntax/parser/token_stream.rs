@@ -1,10 +1,10 @@
 use crate::source::source_span::SourceSpan;
 use crate::lexer::token::TokenType::Identifier;
 use crate::lexer::token::{Token, TokenType};
-use crate::error::spanned_error::WithSpan;
 use crate::syntax::error::{SyntaxErrorType, SyntaxResult};
 use std::iter::Peekable;
 use std::slice::Iter;
+use crate::error::spanned_error::SpannableError;
 
 pub struct TokenStream<'a> {
     iter: Peekable<Iter<'a, Token>>,
@@ -31,7 +31,7 @@ impl<'a> TokenStream<'a> {
     }
     
     pub fn prev_span(&self) -> SourceSpan {
-        self.prev_token.span.clone()
+        self.prev_token.span
     }
 
     fn end_span(&mut self) -> SourceSpan {
@@ -53,15 +53,18 @@ impl<'a> TokenStream<'a> {
 
         match self.next() {
             None => {
-                Err(SyntaxErrorType::expected_token(None, token_type).at(self.end_span()))
+                Err(SyntaxErrorType::expected_token(None, token_type)
+                    .at(self.end_span())
+                )
             },
 
             Some(token) => {
                 if *token == token_type {
                     Ok(token)
                 } else {
-                    let span = token.span.clone();
-                    Err(SyntaxErrorType::expected_token(Some(token.clone()), token_type).at(span))
+                    Err(SyntaxErrorType::expected_token(Some(token.clone()), token_type)
+                        .at(token.span)
+                    )
                 }
             },
         }

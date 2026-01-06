@@ -54,6 +54,13 @@ pub enum ASTNodeType {
     For(ForNode),
 }
 
+pub trait SpannableASTNode {
+    fn at(self, span: SourceSpan) -> ASTNode
+    where Self: Sized, ASTNodeType: From<Self> {
+        ASTNode::new(self.into(), span)
+    }
+}
+
 macro_rules! impl_to_ast_node_type {
     ($($node_type:ident => $variant:ident),*) => {
         $(
@@ -62,6 +69,8 @@ macro_rules! impl_to_ast_node_type {
                     $variant(node)
                 }
             }
+
+            impl SpannableASTNode for $node_type {}
         )*
     };
 }

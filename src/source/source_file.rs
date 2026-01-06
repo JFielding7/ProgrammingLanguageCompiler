@@ -1,5 +1,4 @@
-use std::iter::{Enumerate, Map};
-use std::path::{Display, PathBuf};
+use std::path::{Display, Path, PathBuf};
 use std::slice::Iter;
 
 #[derive(Debug)]
@@ -9,10 +8,12 @@ pub struct SourceFile {
 }
 
 impl SourceFile {
-    pub fn new(path: PathBuf, lines: Vec<String>) -> Self {
+    pub fn new(file_path: &Path, source_code: String) -> Self {
         Self {
-            path,
-            lines,
+            path: file_path.to_path_buf(),
+            lines: source_code
+                .lines()
+                .map(|line| line.to_string()).collect::<Vec<String>>(),
         }
     }
     
