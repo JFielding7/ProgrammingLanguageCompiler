@@ -9,19 +9,19 @@ pub mod function_call_node;
 pub mod while_node;
 pub mod for_node;
 pub mod type_annotation;
+pub mod ast_arena;
 
-use crate::syntax::ast::ast_node::{ASTNode, ASTNodeType};
-use crate::syntax::ast::function_def_node::FunctionDefNode;
+use crate::ast::ast_arena::ASTNodeId;
 
 
 #[derive(Debug)]
 pub struct AST {
-    functions: Vec<FunctionDefNode>,
-    top_level_code: Vec<ASTNode>,
+    functions: Vec<ASTNodeId>,
+    top_level_code: Vec<ASTNodeId>,
 }
 
 impl AST {
-    pub fn new(functions: Vec<FunctionDefNode>, top_level_code: Vec<ASTNode>) -> Self {
+    pub fn new(functions: Vec<ASTNodeId>, top_level_code: Vec<ASTNodeId>) -> Self {
         Self {
             functions,
             top_level_code,

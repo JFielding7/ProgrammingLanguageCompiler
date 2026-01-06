@@ -1,15 +1,15 @@
 use crate::source::source_span::SourceSpan;
-use crate::syntax::ast::access_node::AccessNode;
-use crate::syntax::ast::ast_node::ASTNodeType::*;
-use crate::syntax::ast::binary_operator_node::BinaryOperatorNode;
-use crate::syntax::ast::for_node::ForNode;
-use crate::syntax::ast::function_call_node::FunctionCallNode;
-use crate::syntax::ast::function_def_node::FunctionDefNode;
-use crate::syntax::ast::if_node::IfNode;
-use crate::syntax::ast::index_node::IndexNode;
-use crate::syntax::ast::type_annotation::TypeAnnotation;
-use crate::syntax::ast::unary_operator_node::UnaryOperatorNode;
-use crate::syntax::ast::while_node::WhileNode;
+use crate::ast::access_node::AccessNode;
+use crate::ast::ast_node::ASTNodeType::*;
+use crate::ast::binary_operator_node::BinaryOperatorNode;
+use crate::ast::for_node::ForNode;
+use crate::ast::function_call_node::FunctionCallNode;
+use crate::ast::function_def_node::FunctionDefNode;
+use crate::ast::if_node::IfNode;
+use crate::ast::index_node::IndexNode;
+use crate::ast::type_annotation::TypeAnnotation;
+use crate::ast::unary_operator_node::UnaryOperatorNode;
+use crate::ast::while_node::WhileNode;
 
 #[derive(Debug)]
 pub struct ASTNode {
@@ -25,18 +25,6 @@ impl ASTNode {
             span,
             type_annotation: None,
         }
-    }
-
-    pub fn annotate_type(mut self, type_annotation: Option<TypeAnnotation>) -> Self {
-        self.type_annotation = type_annotation;
-        self
-    }
-}
-
-pub trait ASTNodeSpan {
-    fn at(self, span: SourceSpan) -> ASTNode
-    where Self:Sized, ASTNodeType: From<Self> {
-        ASTNode::new(self.into(), span)
     }
 }
 
@@ -74,8 +62,6 @@ macro_rules! impl_to_ast_node_type {
                     $variant(node)
                 }
             }
-
-            impl ASTNodeSpan for $node_type {}
         )*
     };
 }

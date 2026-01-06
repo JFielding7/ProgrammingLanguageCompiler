@@ -1,18 +1,17 @@
 use error::compiler_error::CompilerError::{FileRead, NoInputFiles};
 use error::compiler_error::CompilerResult;
 use crate::lexer::tokenizer::lex;
-use crate::syntax::ast::AST;
+use ast::AST;
 use std::fs::read_to_string;
 use std::path::Path;
-use crate::lexer::error::LexerError;
 use source::source_file::SourceFile;
-use crate::syntax::error::SyntaxError;
 
 mod lexer;
 mod syntax;
 mod error;
 mod source;
-mod semantic;
+// mod semantic;
+mod ast;
 
 fn compile_program(args: Vec<String>, curr_source_file: &mut Option<SourceFile>) -> CompilerResult {
     const MIN_ARG_COUNT: usize = 2;

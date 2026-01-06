@@ -1,19 +1,19 @@
-use crate::syntax::ast::ast_node::ASTNode;
+use crate::ast::ast_arena::ASTNodeId;
 
 #[derive(Debug)]
 pub struct UnaryOperatorNode {
     op_type: UnaryOperatorType,
-    operand: Box<ASTNode>,
+    operand: ASTNodeId,
 }
 
 impl UnaryOperatorNode {
     pub fn new(
         op_type: UnaryOperatorType,
-        operand: ASTNode,
+        operand: ASTNodeId,
     ) -> Self {
         Self {
             op_type,
-            operand: Box::new(operand)
+            operand
         }
     }
 }

@@ -1,6 +1,7 @@
 use crate::lexer::tokenizer::TokenizedLines;
-use crate::syntax::ast::ast_node::ASTNodeType::FunctionDef;
-use crate::syntax::ast::AST;
+use crate::ast::ast_node::ASTNodeType::FunctionDef;
+use crate::ast::AST;
+use crate::ast::ast_arena::ASTArena;
 use crate::syntax::error::{SyntaxError, SyntaxResult};
 use crate::syntax::parser::ast_parser::ASTParser;
 use crate::syntax::parser::source_statements::SourceStatements;
@@ -11,7 +12,7 @@ mod source_statements;
 mod expression;
 mod token_stream;
 mod ast_parser;
-mod type_annotation_parser;
+mod type_annotation;
 
 impl TryFrom<TokenizedLines> for AST {
     type Error = SyntaxError;
@@ -20,16 +21,18 @@ impl TryFrom<TokenizedLines> for AST {
 
         let statements: SourceStatements = source_lines.into();
 
+        let ast_arena = ASTArena::new();
+
         let mut functions = vec![];
         let mut top_level_code = vec![];
 
-        for node_res in ASTParser::new(statements) {
-            let node = node_res?;
+        for node_res in ASTParser::new(statements, ast_arena) {
+            let node_id = node_res?;
 
-            if let FunctionDef(function_def_node) = node.node_type {
-                functions.push(function_def_node);
+            if let FunctionDef(_) = ast_arena.lookup(node_id).node_type {
+                functions.push(node_id);
             } else {
-                top_level_code.push(node)
+                top_level_code.push(node_id)
             }
         }
 

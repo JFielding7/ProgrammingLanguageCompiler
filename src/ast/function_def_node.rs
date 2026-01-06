@@ -1,15 +1,15 @@
-use crate::syntax::ast::ast_node::ASTNode;
-use crate::syntax::ast::type_annotation::TypeAnnotation;
+use crate::ast::ast_arena::ASTNodeId;
+use crate::ast::type_annotation::TypeAnnotation;
 
 #[derive(Debug)]
 pub struct FunctionDefNode {
     name: String,
     params: Vec<Parameter>,
-    body: Vec<ASTNode>,
+    body: Vec<ASTNodeId>,
 }
 
 impl FunctionDefNode {
-    pub fn new(name: String, params: Vec<Parameter>, body: Vec<ASTNode>) -> Self {
+    pub fn new(name: String, params: Vec<Parameter>, body: Vec<ASTNodeId>) -> Self {
         Self {
             name,
             params,

@@ -1,5 +1,5 @@
 use crate::lexer::token::TokenType::{Comma, DoubleRightArrow, Greater, Less};
-use crate::syntax::ast::type_annotation::TypeAnnotation;
+use crate::ast::type_annotation::TypeAnnotation;
 use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::token_stream::TokenStream;
 

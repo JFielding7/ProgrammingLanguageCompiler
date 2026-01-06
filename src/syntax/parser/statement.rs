@@ -35,11 +35,16 @@ impl Statement {
     }
 
     pub fn start_token(&self) -> &Token {
-        if self.len() > Self::INDEX_AFTER_INDENT {
-            &self[Self::INDEX_AFTER_INDENT]
-        } else {
-            unreachable!("Statement must not be blank")
-        }
+        &self[Self::INDEX_AFTER_INDENT]
+    }
+
+    pub fn last_token(&self) -> &Token {
+        &self[self.len() - 1]
+    }
+    
+    pub fn full_span(&self) -> SourceSpan {
+        let start_span = &self.start_token().span;
+        SourceSpan::new(start_span.line_index, start_span.start, self.last_token().span.end)
     }
 
     pub fn start_token_type(&self) -> &TokenType {

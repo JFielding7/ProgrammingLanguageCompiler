@@ -1,16 +1,16 @@
-use crate::syntax::ast::access_node::Member::Field;
-use crate::syntax::ast::ast_node::ASTNode;
+use crate::ast::access_node::Member::Field;
+use crate::ast::ast_arena::ASTNodeId;
 
 #[derive(Debug)]
 pub struct AccessNode {
-    receiver: Box<ASTNode>,
+    receiver: ASTNodeId,
     member: Member,
 }
 
 impl AccessNode {
-    pub fn new(receiver: ASTNode, member: Member) -> Self {
+    pub fn new(receiver: ASTNodeId, member: Member) -> Self {
         Self {
-            receiver: Box::new(receiver),
+            receiver,
             member,
         }
     }
@@ -23,7 +23,7 @@ pub enum Member {
     },
     Method {
         name: String,
-        args: Option<Box<ASTNode>>,
+        args: Option<ASTNodeId>,
     },
 }
 
@@ -41,10 +41,10 @@ impl Member {
         }
     }
 
-    pub fn method_with_args(name: String, args: ASTNode) -> Self {
+    pub fn method_with_args(name: String, args: ASTNodeId) -> Self {
         Self::Method {
             name,
-            args: Some(Box::new(args)),
+            args: Some(args),
         }
     }
 }

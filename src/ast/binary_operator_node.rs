@@ -1,22 +1,22 @@
-use crate::syntax::ast::ast_node::ASTNode;
+use crate::ast::ast_arena::ASTNodeId;
 
 #[derive(Debug)]
 pub struct BinaryOperatorNode {
     op_type: BinaryOperatorType,
-    left: Box<ASTNode>,
-    right: Box<ASTNode>,
+    left: ASTNodeId,
+    right: ASTNodeId,
 }
 
 impl BinaryOperatorNode {
     pub fn new(
         op_type: BinaryOperatorType,
-        left: ASTNode,
-        right: ASTNode,
+        left: ASTNodeId,
+        right: ASTNodeId,
     ) -> Self {
         Self {
             op_type,
-            left: Box::new(left),
-            right: Box::new(right),
+            left,
+            right,
         }
     }
 }
