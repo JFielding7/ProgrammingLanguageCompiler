@@ -288,9 +288,14 @@ fn parse_expression_rec(token_stream: &mut TokenStream, curr_precedence: u8) -> 
     while let Some(&token) = token_stream.peek() {
 
         if is_terminal(token) {
-            return Ok(left_node.annotate_type(
-                parse_type_annotation(token_stream, token)?)
-            );
+            let type_annotation = if *token == Colon {
+                token_stream.next();
+                Some(parse_type_annotation(token_stream)?)
+            } else {
+                None
+            };
+            
+            return Ok(left_node.annotate_type(type_annotation));
         }
 
         if let Some((left_precedence, right_precedence)) = operators_with_lhs_precedence(token) {

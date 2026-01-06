@@ -34,6 +34,13 @@ impl<'a> TokenStream<'a> {
         self.prev_token.span.clone()
     }
 
+    fn end_span(&mut self) -> SourceSpan {
+        let mut span = self.prev_span();
+        span.start = span.end;
+        span.end += 1;
+        span
+    }
+
     pub fn split_curr_token(&mut self) {
         self.curr_token_split = true;
     }
@@ -46,7 +53,7 @@ impl<'a> TokenStream<'a> {
 
         match self.next() {
             None => {
-                Err(SyntaxErrorType::expected_token(None, token_type).at(self.prev_span()))
+                Err(SyntaxErrorType::expected_token(None, token_type).at(self.end_span()))
             },
 
             Some(token) => {

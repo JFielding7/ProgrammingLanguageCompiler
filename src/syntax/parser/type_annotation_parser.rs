@@ -1,6 +1,5 @@
-use crate::lexer::token::Token;
-use crate::lexer::token::TokenType::{Colon, Comma, DoubleRightArrow, Greater, Less};
-use crate::syntax::ast::ast_node::TypeAnnotation;
+use crate::lexer::token::TokenType::{Comma, DoubleRightArrow, Greater, Less};
+use crate::syntax::ast::type_annotation::TypeAnnotation;
 use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::token_stream::TokenStream;
 
@@ -20,18 +19,18 @@ fn assert_type_params_closed(token_stream: &mut TokenStream) -> SyntaxResult<()>
 
 fn parse_inner_types(token_stream: &mut TokenStream) -> SyntaxResult<Vec<TypeAnnotation>> {
 
-    let mut inner_types = vec![parse_type_annotation_rec(token_stream)?];
+    let mut inner_types = vec![parse_type_annotation(token_stream)?];
 
     while token_stream.peek_matches(Comma) {
         token_stream.next();
 
-        inner_types.push(parse_type_annotation_rec(token_stream)?);
+        inner_types.push(parse_type_annotation(token_stream)?);
     }
 
     Ok(inner_types)
 }
 
-fn parse_type_annotation_rec(token_stream: &mut TokenStream) -> SyntaxResult<TypeAnnotation> {
+pub fn parse_type_annotation(token_stream: &mut TokenStream) -> SyntaxResult<TypeAnnotation> {
 
     let type_name = token_stream.expect_next_identifier()?;
 
@@ -44,14 +43,4 @@ fn parse_type_annotation_rec(token_stream: &mut TokenStream) -> SyntaxResult<Typ
     } else {
         Ok(TypeAnnotation::new(type_name))
     }
-}
-
-pub fn parse_type_annotation(token_stream: &mut TokenStream, terminal_token: &Token) -> SyntaxResult<Option<TypeAnnotation>> {
-
-    Ok(if *terminal_token == Colon {
-        token_stream.next();
-        Some(parse_type_annotation_rec(token_stream)?)
-    } else {
-        None
-    })
 }

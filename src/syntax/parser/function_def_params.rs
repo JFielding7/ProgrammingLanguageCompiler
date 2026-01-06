@@ -1,7 +1,8 @@
-use crate::lexer::token::TokenType::{CloseParen, Comma, Identifier, OpenParen};
+use crate::lexer::token::TokenType::{CloseParen, Colon, Comma, Identifier, OpenParen};
 use crate::syntax::ast::function_def_node::Parameter;
 use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::token_stream::TokenStream;
+use crate::syntax::parser::type_annotation_parser::parse_type_annotation;
 
 pub fn parse_parameters(token_stream: &mut TokenStream) -> SyntaxResult<Vec<Parameter>> {
     token_stream.expect_next_token(OpenParen)?;
@@ -25,8 +26,9 @@ pub fn parse_parameters(token_stream: &mut TokenStream) -> SyntaxResult<Vec<Para
 }
 
 fn parse_parameter(token_stream: &mut TokenStream) -> SyntaxResult<Parameter> {
-    let param_type = token_stream.expect_next_token(Identifier)?.token_str.clone();
     let param_name = token_stream.expect_next_token(Identifier)?.token_str.clone();
+    token_stream.expect_next_token(Colon)?;
+    let type_annotation = parse_type_annotation(token_stream)?;
 
-    Ok(Parameter::new(param_name, param_type))
+    Ok(Parameter::new(param_name, type_annotation))
 }

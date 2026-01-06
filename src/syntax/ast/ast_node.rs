@@ -7,6 +7,7 @@ use crate::syntax::ast::function_call_node::FunctionCallNode;
 use crate::syntax::ast::function_def_node::FunctionDefNode;
 use crate::syntax::ast::if_node::IfNode;
 use crate::syntax::ast::index_node::IndexNode;
+use crate::syntax::ast::type_annotation::TypeAnnotation;
 use crate::syntax::ast::unary_operator_node::UnaryOperatorNode;
 use crate::syntax::ast::while_node::WhileNode;
 
@@ -37,29 +38,6 @@ pub trait ASTNodeSpan {
     where Self:Sized, ASTNodeType: From<Self> {
         ASTNode::new(self.into(), span)
     }
-}
-
-#[derive(Debug)]
-pub struct TypeAnnotation {
-    type_name: String,
-    inner_types: Option<Vec<TypeAnnotation>>,
-}
-
-impl TypeAnnotation {
-    pub fn new(type_name: String) -> Self {
-        Self {
-            type_name,
-            inner_types: None,
-        }
-    }
-    
-    pub fn with_params(type_name: String, inner_types: Vec<TypeAnnotation>) -> Self {
-        Self {
-            type_name,
-            inner_types: Some(inner_types),
-        }
-    }
-    
 }
 
 #[derive(Debug)]

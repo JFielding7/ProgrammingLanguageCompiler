@@ -176,6 +176,7 @@ impl std::fmt::Display for TokenType {
             In => "'in'",
             Greater => "'>'",
             Less => "'<'",
+            Colon => "':'",
             Indent(_) => "Indent",
             _ => ""
         })

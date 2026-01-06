@@ -8,6 +8,7 @@ pub mod access_node;
 pub mod function_call_node;
 pub mod while_node;
 pub mod for_node;
+pub mod type_annotation;
 
 use crate::syntax::ast::ast_node::{ASTNode, ASTNodeType};
 use crate::syntax::ast::function_def_node::FunctionDefNode;

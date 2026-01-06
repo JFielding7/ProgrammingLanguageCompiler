@@ -1,4 +1,5 @@
 use crate::syntax::ast::ast_node::ASTNode;
+use crate::syntax::ast::type_annotation::TypeAnnotation;
 
 #[derive(Debug)]
 pub struct FunctionDefNode {
@@ -20,12 +21,15 @@ impl FunctionDefNode {
 #[derive(Debug)]
 pub struct Parameter {
     name: String,
-    data_type: String,
+    type_annotation: TypeAnnotation,
 }
 
 impl Parameter {
-    pub fn new(name: String, data_type: String) -> Self {
-        Self { name, data_type }
+    pub fn new(name: String, type_annotation: TypeAnnotation) -> Self {
+        Self { 
+            name, 
+            type_annotation 
+        }
     }
 }
 
