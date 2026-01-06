@@ -194,7 +194,7 @@ fn close_token(open_token: &Token) -> TokenType {
 }
 
 fn assert_group_closed(token_stream: &mut TokenStream, open_token: &Token) -> SyntaxResult<()> {
-    if token_stream.next_matches(close_token(open_token)) {
+    if token_stream.peek_matches(close_token(open_token)) {
         token_stream.next();
         Ok(())
     } else {
@@ -210,7 +210,7 @@ fn parse_required_grouped_expression(token_stream: &mut TokenStream, open_token:
 }
 
 fn parse_optional_grouped_expression(token_stream: &mut TokenStream, open_token: &Token) -> SyntaxResult<Option<ASTNode>> {
-    let group = if token_stream.next_matches(CloseParen) {
+    let group = if token_stream.peek_matches(CloseParen) {
         None
     } else {
         Some(parse_expression_rec(token_stream, 0)?)
@@ -224,10 +224,10 @@ fn parse_accessed_member(token_stream: &mut TokenStream) -> SyntaxResult<Member>
     let member_name = token_stream.expect_next_token(Identifier)?;
     let member_name_string = member_name.to_string();
 
-    if token_stream.next_matches(OpenParen) {
+    if token_stream.peek_matches(OpenParen) {
         token_stream.next();
 
-        let member = if token_stream.next_matches(CloseParen) {
+        let member = if token_stream.peek_matches(CloseParen) {
             Ok(Member::method_no_args(member_name_string))
         } else {
             let args = parse_expression_rec(token_stream, 0)?;

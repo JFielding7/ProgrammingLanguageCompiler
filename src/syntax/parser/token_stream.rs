@@ -8,14 +8,17 @@ use std::slice::Iter;
 
 pub struct TokenStream<'a> {
     iter: Peekable<Iter<'a, Token>>,
-    prev: &'a Token,
+    prev_token: &'a Token,
+    curr_token_split: bool,
+
 }
 
 impl<'a> TokenStream<'a> {
     pub fn new(tokens: &'a [Token]) -> Self {
         Self {
             iter: tokens.iter().peekable(),
-            prev: &tokens[0]
+            prev_token: &tokens[0],
+            curr_token_split: false
         }
     }
 
@@ -24,11 +27,19 @@ impl<'a> TokenStream<'a> {
     }
 
     pub fn empty(&mut self) -> bool{
-        self.iter.peek().is_none()
+        self.peek().is_none()
     }
     
     pub fn prev_span(&self) -> SourceSpan {
-        self.prev.span.clone()
+        self.prev_token.span.clone()
+    }
+
+    pub fn split_curr_token(&mut self) {
+        self.curr_token_split = true;
+    }
+
+    pub fn is_curr_token_split(&self) -> bool {
+        self.curr_token_split
     }
 
     pub fn expect_next_token(&mut self, token_type: TokenType) -> SyntaxResult<&Token> {
@@ -53,7 +64,7 @@ impl<'a> TokenStream<'a> {
         self.expect_next_token(Identifier).map(|token| token.token_str.clone())
     }
 
-    pub fn next_matches(&mut self, token_type: TokenType) -> bool {
+    pub fn peek_matches(&mut self, token_type: TokenType) -> bool {
         self.peek().is_some_and(|&token| *token == token_type)
     }
 }
@@ -62,12 +73,14 @@ impl<'a> Iterator for TokenStream<'a> {
     type Item = &'a Token;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let token = self.iter.next();
+        let token_opt = self.iter.next();
 
-        if let Some(t) = token {
-            self.prev = t;
+        if let Some(token) = token_opt {
+            self.prev_token = token;
         }
 
-        token
+        self.curr_token_split = false;
+
+        token_opt
     }
 }
