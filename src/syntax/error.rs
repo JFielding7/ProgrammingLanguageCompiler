@@ -35,7 +35,5 @@ impl SyntaxErrorType {
     }
 }
 
-impl SpannableError for SyntaxErrorType {}
-
 pub type SyntaxError = SpannedError<SyntaxErrorType>;
 pub type SyntaxResult<T> = Result<T, SyntaxError>;

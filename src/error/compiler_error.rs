@@ -1,8 +1,9 @@
 use thiserror::Error;
 use crate::error::compiler_error::CompilerError::{Lexer, Syntax};
-use crate::lexer::error::LexerError;
+use crate::error::spanned_error::SpannableError;
+use crate::lexer::error::{LexerError, LexerErrorType};
 use crate::source::source_file::SourceFile;
-use crate::syntax::error::SyntaxError;
+use crate::syntax::error::{SyntaxError, SyntaxErrorType};
 
 #[derive(Error, Debug)]
 pub enum CompilerError {
@@ -31,6 +32,19 @@ impl CompilerError {
             _ => self.to_string(),
         }
     }
+}
+
+macro_rules! impl_spannable_errors {
+    ($($error_type:ident),*) => {
+        $(
+            impl SpannableError for $error_type {}
+        )*
+    };
+}
+
+impl_spannable_errors! {
+    LexerErrorType,
+    SyntaxErrorType
 }
 
 pub type CompilerResult = Result<(), CompilerError>;

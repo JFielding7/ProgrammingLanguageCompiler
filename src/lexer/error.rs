@@ -1,4 +1,4 @@
-use crate::error::spanned_error::{SpannableError, SpannedError};
+use crate::error::spanned_error::SpannedError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum LexerErrorType {
@@ -8,8 +8,6 @@ pub enum LexerErrorType {
     #[error("Error: Unaligned Indent: Indent size {0} is not a multiple of 4")]
     UnalignedIndent(usize),
 }
-
-impl SpannableError for LexerErrorType {}
 
 pub type LexerError = SpannedError<LexerErrorType>;
 pub type LexerResult<T> = Result<T, LexerError>;
