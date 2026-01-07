@@ -1,12 +1,14 @@
 use std::mem::discriminant;
 use logos::Logos;
+use string_interner::DefaultSymbol;
 use crate::source::source_span::SourceSpan;
 use TokenType::*;
+use crate::compiler_context::CompilerContext;
 
 #[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
-    pub token_str: String,
+    pub symbol: DefaultSymbol,
     pub span: SourceSpan,
 }
 
@@ -138,8 +140,8 @@ pub enum TokenType {
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, token_str: String, span: SourceSpan) -> Self {
-        Self { token_type, token_str, span }
+    pub fn new(token_type: TokenType, token_str: DefaultSymbol, span: SourceSpan) -> Self {
+        Self { token_type, symbol: token_str, span }
     }
 
     pub fn is_legal_statement_boundary(&self) -> bool {
@@ -152,17 +154,19 @@ impl Token {
             _ => true,
         }
     }
+
+    pub fn display(&self, ctx: &mut CompilerContext) -> String {
+        if let Some(s) = ctx.resolve_symbol(self.symbol) {
+            format!("'{}'", s)
+        } else {
+            format!("<invalid symbol {:?}>", self.symbol)
+        }
+    }
 }
 
 impl PartialEq<TokenType> for Token {
     fn eq(&self, other: &TokenType) -> bool {
         discriminant(&self.token_type) == discriminant(other)
-    }
-}
-
-impl std::fmt::Display for Token {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&format!("'{}'", self.token_str))
     }
 }
 
@@ -172,6 +176,8 @@ impl std::fmt::Display for TokenType {
             Identifier => "Identifier",
             OpenParen => "'('",
             CloseParen => "')'",
+            OpenBracket => "'['",
+            CloseBracket => "']'",
             Comma => "','",
             In => "'in'",
             Greater => "'>'",

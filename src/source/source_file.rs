@@ -1,3 +1,4 @@
+use std::fs::read_to_string;
 use std::path::{Display, Path, PathBuf};
 use std::slice::Iter;
 
@@ -8,13 +9,15 @@ pub struct SourceFile {
 }
 
 impl SourceFile {
-    pub fn new(file_path: &Path, source_code: String) -> Self {
-        Self {
+    pub fn read(file_path_name: String) -> std::io::Result<Self> {
+        let file_path = Path::new(&file_path_name);
+        
+        Ok(Self {
             path: file_path.to_path_buf(),
-            lines: source_code
+            lines: read_to_string(file_path)?
                 .lines()
                 .map(|line| line.to_string()).collect::<Vec<String>>(),
-        }
+        })
     }
     
     pub fn path_display(&self) -> Display<'_> {

@@ -1,22 +1,14 @@
-use crate::source::source_span::SourceSpan;
-use crate::lexer::error::LexerErrorType;
-use crate::lexer::token::{Token, TokenType};
-use crate::error::spanned_error::{SpannableError, SpannedError};
-use crate::syntax::error::expected_token::ExpectedTokenError;
-use crate::syntax::error::SyntaxErrorType::{ExpectedToken, UnmatchedParen};
-use crate::syntax::error::unmatched_paren::UnmatchedParenError;
-
-pub mod expected_token;
-pub mod unmatched_paren;
+use crate::error::spanned_error::SpannedError;
+use crate::lexer::token::TokenType;
 
 #[derive(thiserror::Error, Debug)]
-pub enum SyntaxErrorType {
+pub enum SyntaxError {
 
-    #[error("Error: {0}")]
-    ExpectedToken(#[from] ExpectedTokenError),
+    #[error("Error: {0} expected")]
+    ExpectedToken(TokenType),
 
-    #[error("Error: {0}")]
-    UnmatchedParen(#[from] UnmatchedParenError),
+    #[error("Error: Unmatched {0}")]
+    UnmatchedGroupOpening(TokenType),
 
     #[error("Error: Invalid Expression")]
     InvalidExpression,
@@ -25,15 +17,4 @@ pub enum SyntaxErrorType {
     IndentTooLarge,
 }
 
-impl SyntaxErrorType {
-    pub fn expected_token(actual: Option<Token>, expected: TokenType) -> Self {
-        ExpectedToken(ExpectedTokenError::new(actual, expected))
-    }
-
-    pub fn unmatched_paren(paren_type: TokenType) -> Self {
-        UnmatchedParen(UnmatchedParenError::new(paren_type))
-    }
-}
-
-pub type SyntaxError = SpannedError<SyntaxErrorType>;
-pub type SyntaxResult<T> = Result<T, SyntaxError>;
+pub type SyntaxResult<T> = Result<T, SpannedError>;

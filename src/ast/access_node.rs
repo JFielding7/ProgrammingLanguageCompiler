@@ -1,3 +1,4 @@
+use string_interner::DefaultSymbol;
 use crate::ast::access_node::Member::Field;
 use crate::ast::arena_ast::ASTNodeId;
 
@@ -19,29 +20,29 @@ impl AccessNode {
 #[derive(Debug)]
 pub enum Member {
     Field {
-        name: String,
+        name: DefaultSymbol,
     },
     Method {
-        name: String,
+        name: DefaultSymbol,
         args: Option<ASTNodeId>,
     },
 }
 
 impl Member {
-    pub fn field(name: String) -> Self {
+    pub fn field(name: DefaultSymbol) -> Self {
         Field {
             name,
         }
     }
     
-    pub fn method_no_args(name: String) -> Self {
+    pub fn method_no_args(name: DefaultSymbol) -> Self {
         Self::Method {
             name,
             args: None,
         }
     }
 
-    pub fn method_with_args(name: String, args: ASTNodeId) -> Self {
+    pub fn method_with_args(name: DefaultSymbol, args: ASTNodeId) -> Self {
         Self::Method {
             name,
             args: Some(args),

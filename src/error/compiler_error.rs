@@ -1,35 +1,31 @@
 use thiserror::Error;
-use crate::error::compiler_error::CompilerError::{Lexer, Syntax};
-use crate::error::spanned_error::SpannableError;
-use crate::lexer::error::{LexerError, LexerErrorType};
+use crate::error::compiler_error::CompilerError::{NoInputFiles, FileRead, Spanned};
+use crate::error::spanned_error::{SpannableError, SpannedError};
+use crate::lexer::error::LexerError;
 use crate::source::source_file::SourceFile;
-use crate::syntax::error::{SyntaxError, SyntaxErrorType};
+use crate::syntax::error::SyntaxError;
 
 #[derive(Error, Debug)]
 pub enum CompilerError {
-    #[error("Error: No Input Files")]
     NoInputFiles,
 
-    #[error("Error: {file_name}: {error}")]
     FileRead {
         file_name: String,
         #[source]
         error: std::io::Error,
     },
 
-    #[error(transparent)]
-    Lexer(#[from] LexerError),
-
-    #[error(transparent)]
-    Syntax(#[from] SyntaxError),
+    Spanned(SourceFile, #[source] SpannedError),
 }
 
-impl CompilerError {
-    pub fn format(&self, curr_source_file: Option<SourceFile>) -> String {
-        match (self, curr_source_file) {
-            (Lexer(e), Some(src)) => e.format(src),
-            (Syntax(e), Some(src)) => e.format(src),
-            _ => self.to_string(),
+impl std::fmt::Display for CompilerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            NoInputFiles => write!(f, "Error: No Input Files"),
+            FileRead { file_name, error } => {
+                write!(f, "Error: {file_name}: {error}")
+            }
+            Spanned(file, e) => write!(f, "{}", e.format(file)),
         }
     }
 }
@@ -43,8 +39,8 @@ macro_rules! impl_spannable_errors {
 }
 
 impl_spannable_errors! {
-    LexerErrorType,
-    SyntaxErrorType
+    LexerError,
+    SyntaxError
 }
 
 pub type CompilerResult = Result<(), CompilerError>;

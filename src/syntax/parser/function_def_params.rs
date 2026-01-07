@@ -5,7 +5,7 @@ use crate::syntax::parser::token_stream::TokenStream;
 use crate::syntax::parser::type_annotation::parse_type_annotation;
 
 fn parse_parameter(token_stream: &mut TokenStream) -> SyntaxResult<Parameter> {
-    let param_name = token_stream.expect_next_token(Identifier)?.token_str.clone();
+    let param_name = token_stream.expect_next_token(Identifier)?.symbol;
     token_stream.expect_next_token(Colon)?;
     let type_annotation = parse_type_annotation(token_stream)?;
 

@@ -1,7 +1,7 @@
 use crate::error::spanned_error::SpannedError;
 
 #[derive(thiserror::Error, Debug)]
-pub enum LexerErrorType {
+pub enum LexerError {
     #[error("Error: Unrecognized token: {0}")]
     InvalidToken(String),
 
@@ -9,5 +9,5 @@ pub enum LexerErrorType {
     UnalignedIndent(usize),
 }
 
-pub type LexerError = SpannedError<LexerErrorType>;
-pub type LexerResult<T> = Result<T, LexerError>;
+
+pub type LexerResult<T> = Result<T, SpannedError>;

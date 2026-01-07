@@ -1,15 +1,15 @@
-use crate::lexer::token::TokenType::*;
-use crate::lexer::token::{Token, TokenType};
 use crate::ast::access_node::{AccessNode, Member};
 use crate::ast::arena_ast::{ASTNodeId, AST};
-use crate::ast::ast_node::{ASTNode, SpannableASTNode, ASTNodeType};
+use crate::ast::ast_node::{ASTNode, ASTNodeType, SpannableASTNode};
 use crate::ast::binary_operator_node::{BinaryOperatorNode, BinaryOperatorType};
 use crate::ast::function_call_node::FunctionCallNode;
 use crate::ast::index_node::IndexNode;
 use crate::ast::unary_operator_node::{UnaryOperatorNode, UnaryOperatorType};
 use crate::error::spanned_error::SpannableError;
-use crate::syntax::error::SyntaxErrorType::InvalidExpression;
-use crate::syntax::error::{SyntaxErrorType, SyntaxResult};
+use crate::lexer::token::TokenType::*;
+use crate::lexer::token::{Token, TokenType};
+use crate::syntax::error::SyntaxError::{InvalidExpression, UnmatchedGroupOpening};
+use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::expression::OperatorPrecedence::Prefix;
 use crate::syntax::parser::token_stream::TokenStream;
 use crate::syntax::parser::type_annotation::parse_type_annotation;
@@ -189,7 +189,7 @@ fn close_token(open_token: &Token) -> TokenType {
     match open_token.token_type {
         OpenParen => CloseParen,
         OpenBracket => CloseBracket,
-        _ => unreachable!("Invalid group opening token: {open_token}"),
+        _ => unreachable!("Invalid group opening token"),
     }
 }
 
@@ -209,14 +209,14 @@ impl<'a> ExpressionParser<'a> {
     fn parse_token(&mut self, token: &Token) -> SyntaxResult<ASTNodeId> {
         use ASTNodeType::*;
 
-        let token_string = token.to_string();
+        let token_symbol = token.symbol;
         let token_span = token.span;
 
         let node = match token.token_type {
-            TokenType::IntLiteral    => ASTNode::new(IntLiteral(token_string), token_span),
-            TokenType::StringLiteral => ASTNode::new(StringLiteral(token_string), token_span),
-            Identifier               => ASTNode::new(Variable(token_string), token_span),
-            _ => return Err(InvalidExpression.at(token.span))
+            TokenType::IntLiteral    => ASTNode::new(IntLiteral(token_symbol), token_span),
+            TokenType::StringLiteral => ASTNode::new(StringLiteral(token_symbol), token_span),
+            Identifier               => ASTNode::new(Variable(token_symbol), token_span),
+            _ => return Err(InvalidExpression.at(token_span))
         };
 
         Ok(self.ast.add_node(node))
@@ -227,11 +227,15 @@ impl<'a> ExpressionParser<'a> {
             self.token_stream.next();
             Ok(())
         } else {
-            Err(SyntaxErrorType::unmatched_paren(open_token.token_type).at(open_token.span))
+            Err(UnmatchedGroupOpening(open_token.token_type).at(open_token.span))
         }
     }
 
     fn parse_required_grouped_expression(&mut self, open_token: &Token) -> SyntaxResult<ASTNodeId> {
+        if self.token_stream.empty() {
+            return Err(UnmatchedGroupOpening(open_token.token_type).at(open_token.span));
+        }
+
         let group = self.parse_expression_rec(0)?;
 
         self.assert_group_closed(open_token)?;
@@ -239,10 +243,15 @@ impl<'a> ExpressionParser<'a> {
     }
 
     fn parse_optional_grouped_expression(&mut self, open_token: &Token) -> SyntaxResult<Option<ASTNodeId>> {
-        let group = if self.token_stream.peek_matches(CloseParen) {
-            None
-        } else {
-            Some(self.parse_expression_rec(0)?)
+        let group = match self.token_stream.peek() {
+            Some(&token) => {
+                if *token == CloseParen {
+                    None
+                } else {
+                    Some(self.parse_expression_rec(0)?)
+                }
+            }
+            None => return Err(UnmatchedGroupOpening(open_token.token_type).at(open_token.span))
         };
 
         self.assert_group_closed(open_token)?;
@@ -251,22 +260,22 @@ impl<'a> ExpressionParser<'a> {
 
     fn parse_accessed_member(&mut self) -> SyntaxResult<Member> {
         let member_name = self.token_stream.expect_next_token(Identifier)?;
-        let member_name_string = member_name.to_string();
+        let member_name_symbol = member_name.symbol;
 
         if self.token_stream.peek_matches(OpenParen) {
             self.token_stream.next();
 
             let member = if self.token_stream.peek_matches(CloseParen) {
-                Ok(Member::method_no_args(member_name_string))
+                Ok(Member::method_no_args(member_name_symbol))
             } else {
                 let args = self.parse_expression_rec(0)?;
-                Ok(Member::method_with_args(member_name_string, args))
+                Ok(Member::method_with_args(member_name_symbol, args))
             };
             self.token_stream.next();
             member
 
         } else {
-            Ok(Member::field(member_name_string))
+            Ok(Member::field(member_name_symbol))
         }
     }
 
@@ -293,10 +302,39 @@ impl<'a> ExpressionParser<'a> {
         }
     }
 
+    fn led_hook(&mut self, token: &Token, left_node: ASTNodeId, right_precedence: u8) -> SyntaxResult<ASTNodeId> {
+        let token_span = token.span;
+
+        let node = if let Some(op_type) = binary_operator_type(token) {
+            let right_node = self.parse_expression_rec(right_precedence)?;
+            BinaryOperatorNode::new(op_type, left_node, right_node).at(token_span)
+
+        } else if let Some(op_type) = postfix_unary_operator_type(token) {
+            UnaryOperatorNode::new(op_type, left_node).at(token_span)
+
+        } else if *token == OpenBracket {
+            let args = self.parse_required_grouped_expression(token)?;
+            IndexNode::new(left_node, args).at(token_span)
+
+        } else if *token == OpenParen {
+            let args = self.parse_optional_grouped_expression(token)?;
+            FunctionCallNode::new(left_node, args).at(token_span)
+
+        } else if *token == Dot {
+            let member = self.parse_accessed_member()?;
+            AccessNode::new(left_node, member).at(token_span)
+
+        } else {
+            unreachable!("Led hook not implemented");
+        };
+
+        Ok(self.ast.add_node(node))
+    }
+
     fn parse_expression_rec(&mut self, curr_precedence: u8) -> SyntaxResult<ASTNodeId> {
 
         if self.token_stream.empty() {
-            return Err(InvalidExpression.at(self.token_stream.prev_span()))
+            return Err(InvalidExpression.at(self.token_stream.end_span()))
         }
 
         let mut left_node = self.nud_hook()?;
@@ -320,32 +358,8 @@ impl<'a> ExpressionParser<'a> {
                 }
 
                 self.token_stream.next();
-                let token_span = token.span;
+                left_node = self.led_hook(token, left_node, right_precedence)?;
 
-                let node = if let Some(op_type) = binary_operator_type(token) {
-                    let right_node = self.parse_expression_rec(right_precedence)?;
-                    BinaryOperatorNode::new(op_type, left_node, right_node).at(token_span)
-
-                } else if let Some(op_type) = postfix_unary_operator_type(token) {
-                    UnaryOperatorNode::new(op_type, left_node).at(token_span)
-
-                } else if *token == OpenBracket {
-                    let args = self.parse_required_grouped_expression(token)?;
-                    IndexNode::new(left_node, args).at(token_span)
-
-                } else if *token == OpenParen {
-                    let args = self.parse_optional_grouped_expression(token)?;
-                    FunctionCallNode::new(left_node, args).at(token_span)
-
-                } else if *token == Dot {
-                    let member = self.parse_accessed_member()?;
-                    AccessNode::new(left_node, member).at(token_span)
-
-                } else {
-                    unreachable!("Led hook not implemented for {token}");
-                };
-
-                left_node = self.ast.add_node(node);
             } else {
                 return Err(InvalidExpression.at(token.span));
             }

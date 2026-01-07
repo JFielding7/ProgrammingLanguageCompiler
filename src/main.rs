@@ -1,11 +1,13 @@
-use error::compiler_error::CompilerError::{FileRead, NoInputFiles};
-use error::compiler_error::CompilerResult;
-use crate::lexer::tokenizer::TokenizedLines;
-use std::fs::read_to_string;
-use std::path::Path;
-use source::source_file::SourceFile;
 use crate::ast::arena_ast::AST;
+use crate::compiler_context::CompilerContext;
+use crate::lexer::tokenizer::Lexer;
 use crate::syntax::parser::ast_parser::ASTParser;
+use error::compiler_error::CompilerError::NoInputFiles;
+use error::compiler_error::CompilerResult;
+use crate::error::compiler_error::CompilerError;
+use crate::error::compiler_error::CompilerError::FileRead;
+use crate::error::spanned_error::SpannedError;
+use crate::source::source_file::SourceFile;
 
 mod lexer;
 mod syntax;
@@ -13,37 +15,44 @@ mod error;
 mod source;
 // mod semantic;
 mod ast;
+mod compiler_context;
 
-fn compile_program(args: Vec<String>, curr_source_file: &mut Option<SourceFile>) -> CompilerResult {
+fn compile_source_file(source_file: &SourceFile, compiler_context: &mut CompilerContext) -> Result<(), SpannedError> {
+
+    let source_lines = Lexer::lex_source_file(source_file, compiler_context)?;
+    
+    let ast: AST = ASTParser::generate_ast(source_lines)?;
+
+    println!("{:?}", ast);
+
+    Ok(())
+}
+
+fn compile_program(args: Vec<String>, compiler_context: &mut CompilerContext) -> CompilerResult {
     const MIN_ARG_COUNT: usize = 2;
 
     if args.len() < MIN_ARG_COUNT {
         return Err(NoInputFiles)
     }
 
-    let file_name = args[1].to_string();
-    let file_path = Path::new(&file_name);
-    let source_code = read_to_string(file_path)
-        .map_err(|error| FileRead { file_name: file_name.clone(), error })?;
+    for source_file_name in args.into_iter().skip(1) {
+        let source_file = SourceFile::read(source_file_name.clone())
+            .map_err(|err| FileRead { file_name: source_file_name, error: err })?;
 
-    let source_file = curr_source_file.insert(
-        SourceFile::new(file_path, source_code)
-    );
+        compile_source_file(&source_file, compiler_context)
+            .map_err(|spanned_error| CompilerError::Spanned(source_file, spanned_error))?;
+    }
 
-    let source_lines = TokenizedLines::from_source_file(source_file)?;
-
-    let ast: AST = ASTParser::generate_ast(source_lines)?;
-    
-    println!("{:?}", ast);
-    
     Ok(())
 }
 
 fn main()  {
     let args = std::env::args().collect::<Vec<_>>();
-    let mut curr_source_file: Option<SourceFile> = None;
+    let mut compiler_context = CompilerContext::new();
 
-    if let Err(err) = compile_program(args, &mut curr_source_file) {
-        println!("{}", err.format(curr_source_file));
+    // compile_program(args, &mut compiler_context).unwrap();
+
+    if let Err(err) = compile_program(args, &mut compiler_context) {
+        println!("{err}");
     }
 }

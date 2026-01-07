@@ -1,3 +1,4 @@
+use string_interner::DefaultSymbol;
 use crate::source::source_span::SourceSpan;
 use crate::ast::access_node::AccessNode;
 use crate::ast::ast_node::ASTNodeType::*;
@@ -30,10 +31,10 @@ impl ASTNode {
 
 #[derive(Debug)]
 pub enum ASTNodeType {
-    IntLiteral(String),
-    StringLiteral(String),
+    IntLiteral(DefaultSymbol),
+    StringLiteral(DefaultSymbol),
 
-    Variable(String),
+    Variable(DefaultSymbol),
 
     UnaryOperator(UnaryOperatorNode),
 

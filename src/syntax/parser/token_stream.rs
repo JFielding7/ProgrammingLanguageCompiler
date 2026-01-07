@@ -1,10 +1,12 @@
 use crate::source::source_span::SourceSpan;
 use crate::lexer::token::TokenType::Identifier;
 use crate::lexer::token::{Token, TokenType};
-use crate::syntax::error::{SyntaxErrorType, SyntaxResult};
+use crate::syntax::error::{SyntaxError, SyntaxResult};
 use std::iter::Peekable;
 use std::slice::Iter;
+use string_interner::DefaultSymbol;
 use crate::error::spanned_error::SpannableError;
+use crate::syntax::error::SyntaxError::ExpectedToken;
 
 pub struct TokenStream<'a> {
     iter: Peekable<Iter<'a, Token>>,
@@ -34,7 +36,7 @@ impl<'a> TokenStream<'a> {
         self.prev_token.span
     }
 
-    fn end_span(&mut self) -> SourceSpan {
+    pub(crate) fn end_span(&mut self) -> SourceSpan {
         let mut span = self.prev_span();
         span.start = span.end;
         span.end += 1;
@@ -52,26 +54,20 @@ impl<'a> TokenStream<'a> {
     pub fn expect_next_token(&mut self, token_type: TokenType) -> SyntaxResult<&Token> {
 
         match self.next() {
-            None => {
-                Err(SyntaxErrorType::expected_token(None, token_type)
-                    .at(self.end_span())
-                )
-            },
+            None => Err(ExpectedToken(token_type).at(self.end_span())),
 
             Some(token) => {
                 if *token == token_type {
                     Ok(token)
                 } else {
-                    Err(SyntaxErrorType::expected_token(Some(token.clone()), token_type)
-                        .at(token.span)
-                    )
+                    Err(ExpectedToken(token_type).at(token.span))
                 }
             },
         }
     }
     
-    pub fn expect_next_identifier(&mut self) -> SyntaxResult<String> {
-        self.expect_next_token(Identifier).map(|token| token.token_str.clone())
+    pub fn expect_next_identifier(&mut self) -> SyntaxResult<DefaultSymbol> {
+        self.expect_next_token(Identifier).map(|token| token.symbol)
     }
 
     pub fn peek_matches(&mut self, token_type: TokenType) -> bool {

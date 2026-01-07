@@ -1,10 +1,14 @@
+use crate::ast::arena_ast::{ASTNodeId, AST};
+use crate::ast::ast_node::SpannableASTNode;
 use crate::ast::for_node::ForNode;
 use crate::ast::function_def_node::FunctionDefNode;
 use crate::ast::if_node::{ConditionBlock, IfNode};
 use crate::ast::while_node::WhileNode;
-use crate::lexer::token::TokenType;
+use crate::error::spanned_error::SpannableError;
 use crate::lexer::token::TokenType::*;
-use crate::syntax::error::SyntaxErrorType::IndentTooLarge;
+use crate::lexer::token::TokenType;
+use crate::lexer::tokenizer::TokenizedLines;
+use crate::syntax::error::SyntaxError::IndentTooLarge;
 use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::expression::ExpressionParser;
 use crate::syntax::parser::function_def_params::parse_parameters;
@@ -12,10 +16,6 @@ use crate::syntax::parser::source_statements::SourceStatements;
 use crate::syntax::parser::statement::Statement;
 use std::iter::Peekable;
 use std::vec::IntoIter;
-use crate::ast::arena_ast::{ASTNodeId, AST};
-use crate::ast::ast_node::SpannableASTNode;
-use crate::error::spanned_error::SpannableError;
-use crate::lexer::tokenizer::TokenizedLines;
 
 pub struct ASTParser {
     statements_iter: Peekable<IntoIter<Statement>>,
@@ -46,7 +46,7 @@ impl ASTParser {
             }
 
             if indent_size + 1 < child.indent_size {
-                return Err(IndentTooLarge.at(child[0].span.clone()))
+                return Err(IndentTooLarge.at(child[0].span))
             }
 
             if let Some(child) = self.parse_top_level()? {
@@ -175,3 +175,4 @@ impl ASTParser {
         Ok(parser.ast)
     }
 }
+
