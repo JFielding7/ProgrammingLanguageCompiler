@@ -1,6 +1,6 @@
 use string_interner::DefaultSymbol;
 use crate::ast::arena_ast::ASTNodeId;
-use crate::ast::type_annotation::TypeAnnotation;
+use crate::types::type_annotation::TypeAnnotation;
 
 #[derive(Debug)]
 pub struct FunctionDefNode {
@@ -10,7 +10,11 @@ pub struct FunctionDefNode {
 }
 
 impl FunctionDefNode {
-    pub fn new(name: DefaultSymbol, params: Vec<Parameter>, body: Vec<ASTNodeId>) -> Self {
+    pub fn new(
+        name: DefaultSymbol,
+        params: Vec<Parameter>,
+        body: Vec<ASTNodeId>
+    ) -> Self {
         Self {
             name,
             params,
@@ -33,4 +37,3 @@ impl Parameter {
         }
     }
 }
-

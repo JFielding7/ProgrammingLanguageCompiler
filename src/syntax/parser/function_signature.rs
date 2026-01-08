@@ -1,8 +1,11 @@
 use crate::lexer::token::TokenType::{CloseParen, Colon, Comma, Identifier, OpenParen};
 use crate::ast::function_def_node::Parameter;
+use crate::error::spanned_error::SpannableError;
+use crate::syntax::error::SyntaxError::UnexpectedExpression;
 use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::token_stream::TokenStream;
 use crate::syntax::parser::type_annotation::parse_type_annotation;
+use crate::types::type_annotation::TypeAnnotation;
 
 fn parse_parameter(token_stream: &mut TokenStream) -> SyntaxResult<Parameter> {
     let param_name = token_stream.expect_next_token(Identifier)?.symbol;
@@ -31,4 +34,17 @@ pub fn parse_parameters(token_stream: &mut TokenStream) -> SyntaxResult<Vec<Para
     token_stream.expect_next_token(CloseParen)?;
 
     Ok(params)
+}
+
+pub fn parse_return_type(token_stream: &mut TokenStream) -> SyntaxResult<Option<TypeAnnotation>> {
+    match token_stream.peek() {
+        Some(&token) => {
+            if *token == Colon {
+                Ok(Some(parse_type_annotation(token_stream)?))
+            } else {
+                Err(UnexpectedExpression.at(token.span))
+            }
+        },
+        None => Ok(None),
+    }
 }

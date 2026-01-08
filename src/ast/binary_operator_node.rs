@@ -1,10 +1,11 @@
 use crate::ast::arena_ast::ASTNodeId;
+use crate::operators::binary_operators::BinaryOperatorType;
 
 #[derive(Debug)]
 pub struct BinaryOperatorNode {
-    op_type: BinaryOperatorType,
-    left: ASTNodeId,
-    right: ASTNodeId,
+    pub op_type: BinaryOperatorType,
+    pub left: ASTNodeId,
+    pub right: ASTNodeId,
 }
 
 impl BinaryOperatorNode {
@@ -19,44 +20,4 @@ impl BinaryOperatorNode {
             right,
         }
     }
-}
-
-#[derive(Debug)]
-pub enum BinaryOperatorType {
-    Assign,
-    AddAssign,
-    SubAssign,
-    MulAssign,
-    DivAssign,
-    ModAssign,
-    LeftShiftAssign,
-    RightShiftAssign,
-    AndAssign,
-    XorAssign,
-    OrAssign,
-
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Mod,
-
-    BitAnd,
-    BitOr,
-    BitXor,
-
-    LeftShift,
-    RightShift,
-
-    Equal,
-    NotEquals,
-    LessThan,
-    LessOrEqual,
-    GreaterThan,
-    GreaterOrEqual,
-
-    LogicalAnd,
-    LogicalOr,
-
-    CommaOperator,
 }

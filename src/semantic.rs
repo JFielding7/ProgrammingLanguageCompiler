@@ -1,3 +1,3 @@
-mod error;
+pub mod error;
 mod symbol_table;
-mod annotated_ast;
+pub mod type_resolution;

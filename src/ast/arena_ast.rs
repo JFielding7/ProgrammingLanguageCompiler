@@ -1,6 +1,9 @@
+use std::iter::Map;
+use std::ops::Range;
 use crate::ast::ast_node::ASTNodeType::FunctionDef;
 use crate::ast::ast_node::ASTNode;
-use crate::ast::type_annotation::TypeAnnotation;
+use crate::types::type_annotation::TypeAnnotation;
+
 
 #[derive(Debug)]
 pub struct AST {
@@ -31,7 +34,7 @@ impl AST {
         }
     }
 
-    pub fn annotate(&mut self, id: ASTNodeId, type_annotation: Option<TypeAnnotation>) -> ASTNodeId {
+    pub fn annotate_type(&mut self, id: ASTNodeId, type_annotation: Option<TypeAnnotation>) -> ASTNodeId {
         self.node_arena[id.0].type_annotation = type_annotation;
         id
     }
@@ -39,7 +42,16 @@ impl AST {
     pub fn lookup(&self, id: ASTNodeId) -> &ASTNode {
         &self.node_arena[id.0]
     }
+
+    pub fn lookup_mut(&mut self, id: ASTNodeId) -> &mut ASTNode {
+        &mut self.node_arena[id.0]
+    }
+    
+    pub fn ast_node_id_iter(&self) -> NodeIdIter {
+        (0..self.node_arena.len()).map(|id| ASTNodeId(id))
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct ASTNodeId(usize);
+pub struct ASTNodeId(pub usize);
+pub type NodeIdIter = Map<Range<usize>, fn(usize) -> ASTNodeId>;

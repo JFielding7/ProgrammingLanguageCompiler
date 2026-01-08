@@ -1,7 +1,7 @@
 use crate::lexer::token::TokenType::{Comma, DoubleRightArrow, Greater, Less};
-use crate::ast::type_annotation::TypeAnnotation;
 use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::token_stream::TokenStream;
+use crate::types::type_annotation::TypeAnnotation;
 
 fn assert_type_params_closed(token_stream: &mut TokenStream) -> SyntaxResult<()> {
     if token_stream.peek_matches(DoubleRightArrow) {

@@ -1,13 +1,15 @@
 use crate::ast::access_node::{AccessNode, Member};
 use crate::ast::arena_ast::{ASTNodeId, AST};
 use crate::ast::ast_node::{ASTNode, ASTNodeType, SpannableASTNode};
-use crate::ast::binary_operator_node::{BinaryOperatorNode, BinaryOperatorType};
+use crate::ast::binary_operator_node::{BinaryOperatorNode};
 use crate::ast::function_call_node::FunctionCallNode;
 use crate::ast::index_node::IndexNode;
-use crate::ast::unary_operator_node::{UnaryOperatorNode, UnaryOperatorType};
+use crate::ast::unary_operator_node::{UnaryOperatorNode};
 use crate::error::spanned_error::SpannableError;
 use crate::lexer::token::TokenType::*;
 use crate::lexer::token::{Token, TokenType};
+use crate::operators::binary_operators::BinaryOperatorType;
+use crate::operators::unary_operators::UnaryOperatorType;
 use crate::syntax::error::SyntaxError::{InvalidExpression, UnmatchedGroupOpening};
 use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::expression::OperatorPrecedence::Prefix;
@@ -349,7 +351,7 @@ impl<'a> ExpressionParser<'a> {
                     None
                 };
 
-                return Ok(self.ast.annotate(left_node, type_annotation));
+                return Ok(self.ast.annotate_type(left_node, type_annotation));
             }
 
             if let Some((left_precedence, right_precedence)) = operators_with_lhs_precedence(token) {

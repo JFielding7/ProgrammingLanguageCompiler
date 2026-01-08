@@ -1,5 +1,5 @@
 pub mod statement;
-mod function_def_params;
+mod function_signature;
 mod source_statements;
 mod expression;
 mod token_stream;

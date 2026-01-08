@@ -11,7 +11,7 @@ use crate::lexer::tokenizer::TokenizedLines;
 use crate::syntax::error::SyntaxError::IndentTooLarge;
 use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::expression::ExpressionParser;
-use crate::syntax::parser::function_def_params::parse_parameters;
+use crate::syntax::parser::function_signature::{parse_parameters, parse_return_type};
 use crate::syntax::parser::source_statements::SourceStatements;
 use crate::syntax::parser::statement::Statement;
 use std::iter::Peekable;
@@ -67,8 +67,8 @@ impl ASTParser {
         let body = self.parse_children(&func_def_statement)?;
 
         let func_def_node = FunctionDefNode::new(name, params, body)
-            .at(func_def_statement.full_span());
-
+            .at(func_def_statement.full_span()).annotate_type(parse_return_type(&mut token_stream)?);
+        
         Ok(self.ast.add_node(func_def_node))
     }
 

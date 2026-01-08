@@ -7,6 +7,9 @@ pub enum SyntaxError {
     #[error("Error: {0} expected")]
     ExpectedToken(TokenType),
 
+    #[error("Error: Unexpected Expression")]
+    UnexpectedExpression,
+
     #[error("Error: Unmatched {0}")]
     UnmatchedGroupOpening(TokenType),
 

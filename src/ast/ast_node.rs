@@ -8,15 +8,17 @@ use crate::ast::function_call_node::FunctionCallNode;
 use crate::ast::function_def_node::FunctionDefNode;
 use crate::ast::if_node::IfNode;
 use crate::ast::index_node::IndexNode;
-use crate::ast::type_annotation::TypeAnnotation;
 use crate::ast::unary_operator_node::UnaryOperatorNode;
 use crate::ast::while_node::WhileNode;
+use crate::types::data_type::DataType;
+use crate::types::type_annotation::TypeAnnotation;
 
 #[derive(Debug)]
 pub struct ASTNode {
     pub node_type: ASTNodeType,
     pub span: SourceSpan,
     pub type_annotation: Option<TypeAnnotation>,
+    pub data_type: Option<DataType>,
 }
 
 impl ASTNode {
@@ -25,7 +27,13 @@ impl ASTNode {
             node_type, 
             span,
             type_annotation: None,
+            data_type: None,
         }
+    }
+
+    pub fn annotate_type(mut self, type_annotation: Option<TypeAnnotation>) -> Self {
+        self.type_annotation = type_annotation;
+        self
     }
 }
 

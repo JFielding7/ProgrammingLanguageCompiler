@@ -2,6 +2,7 @@ use thiserror::Error;
 use crate::error::compiler_error::CompilerError::{NoInputFiles, FileRead, Spanned};
 use crate::error::spanned_error::{SpannableError, SpannedError};
 use crate::lexer::error::LexerError;
+use crate::semantic::error::SemanticError;
 use crate::source::source_file::SourceFile;
 use crate::syntax::error::SyntaxError;
 
@@ -40,7 +41,8 @@ macro_rules! impl_spannable_errors {
 
 impl_spannable_errors! {
     LexerError,
-    SyntaxError
+    SyntaxError,
+    SemanticError
 }
 
 pub type CompilerResult = Result<(), CompilerError>;

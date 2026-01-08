@@ -1,9 +1,10 @@
 use crate::ast::arena_ast::ASTNodeId;
+use crate::operators::unary_operators::UnaryOperatorType;
 
 #[derive(Debug)]
 pub struct UnaryOperatorNode {
-    op_type: UnaryOperatorType,
-    operand: ASTNodeId,
+    pub op_type: UnaryOperatorType,
+    pub operand: ASTNodeId,
 }
 
 impl UnaryOperatorNode {
@@ -16,15 +17,4 @@ impl UnaryOperatorNode {
             operand
         }
     }
-}
-
-#[derive(Debug)]
-pub enum UnaryOperatorType {
-    Neg,
-    Not,
-    BitNot,
-    PreInc,
-    PreDec,
-    PostInc,
-    PostDec,
 }

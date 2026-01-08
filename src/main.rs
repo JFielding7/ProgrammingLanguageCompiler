@@ -7,21 +7,26 @@ use error::compiler_error::CompilerResult;
 use crate::error::compiler_error::CompilerError;
 use crate::error::compiler_error::CompilerError::FileRead;
 use crate::error::spanned_error::SpannedError;
+use crate::semantic::type_resolution::type_resolver::TypeResolver;
 use crate::source::source_file::SourceFile;
 
 mod lexer;
 mod syntax;
 mod error;
 mod source;
-// mod semantic;
+mod semantic;
 mod ast;
 mod compiler_context;
+mod types;
+mod operators;
 
 fn compile_source_file(source_file: &SourceFile, compiler_context: &mut CompilerContext) -> Result<(), SpannedError> {
 
     let source_lines = Lexer::lex_source_file(source_file, compiler_context)?;
-    
+
     let ast: AST = ASTParser::generate_ast(source_lines)?;
+
+    let ast = TypeResolver::resolve_ast_types(ast);
 
     println!("{:?}", ast);
 
