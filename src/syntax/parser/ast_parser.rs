@@ -11,7 +11,7 @@ use crate::lexer::tokenizer::TokenizedLines;
 use crate::syntax::error::SyntaxError::IndentTooLarge;
 use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::expression::ExpressionParser;
-use crate::syntax::parser::function_signature::{parse_parameters, parse_return_type};
+use crate::syntax::parser::function_signature::{parse_function_name, parse_parameters, parse_return_type};
 use crate::syntax::parser::source_statements::SourceStatements;
 use crate::syntax::parser::statement::Statement;
 use std::iter::Peekable;
@@ -46,10 +46,10 @@ impl ASTParser {
             }
 
             if indent_size + 1 < child.indent_size {
-                return Err(IndentTooLarge.at(child[0].span))
+                return Err(IndentTooLarge.at(child.indent_token().span))
             }
 
-            if let Some(child) = self.parse_top_level()? {
+            if let Some(child) = self.parse_next_ast_node()? {
                 children.push(child);
             }
         }
@@ -62,12 +62,14 @@ impl ASTParser {
 
         let mut token_stream = func_def_statement.suffix_stream(TOKENS_BEFORE_NAME);
 
-        let name = token_stream.expect_next_identifier()?;
+        let name = parse_function_name(&mut token_stream)?;
         let params = parse_parameters(&mut token_stream)?;
         let body = self.parse_children(&func_def_statement)?;
+        let return_type = parse_return_type(&mut token_stream)?;
 
-        let func_def_node = FunctionDefNode::new(name, params, body)
-            .at(func_def_statement.full_span()).annotate_type(parse_return_type(&mut token_stream)?);
+        let func_def_node = FunctionDefNode::new(
+            name, params, body, return_type
+        ).at(func_def_statement.full_span());
         
         Ok(self.ast.add_node(func_def_node))
     }
@@ -144,7 +146,7 @@ impl ASTParser {
         Ok(self.ast.add_node(node))
     }
 
-    fn parse_top_level(&mut self) -> SyntaxResult<Option<ASTNodeId>> {
+    fn parse_next_ast_node(&mut self) -> SyntaxResult<Option<ASTNodeId>> {
         
         if let Some(statement) = &self.statements_iter.next() {
 
@@ -168,7 +170,7 @@ impl ASTParser {
         let statements: SourceStatements = source_lines.into();
         let mut parser = Self::new(statements);
 
-        while let Some(node_id) = parser.parse_top_level()? {
+        while let Some(node_id) = parser.parse_next_ast_node()? {
             parser.ast.add_top_level_node(node_id);
         }
 

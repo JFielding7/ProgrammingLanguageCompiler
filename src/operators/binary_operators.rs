@@ -1,7 +1,5 @@
-use strum::EnumCount;
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, EnumCount)]
-pub enum BinaryOperatorType {
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub enum BinaryOperator {
     Assign,
     AddAssign,
     SubAssign,

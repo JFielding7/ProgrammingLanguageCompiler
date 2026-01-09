@@ -7,18 +7,21 @@ pub struct FunctionDefNode {
     name: DefaultSymbol,
     params: Vec<Parameter>,
     body: Vec<ASTNodeId>,
+    return_type: Option<TypeAnnotation>,
 }
 
 impl FunctionDefNode {
     pub fn new(
         name: DefaultSymbol,
         params: Vec<Parameter>,
-        body: Vec<ASTNodeId>
+        body: Vec<ASTNodeId>,
+        return_type: Option<TypeAnnotation>,
     ) -> Self {
         Self {
             name,
             params,
             body,
+            return_type
         }
     }
 }

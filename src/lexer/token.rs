@@ -125,7 +125,7 @@ pub enum TokenType {
 
     #[regex(r"[0-9]+")]
     IntLiteral,
-    #[regex(r#""(\"|[^"])*""#)]
+    #[regex(r#""([^"\\]|\\.)*""#)]
     StringLiteral,
 
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*")]

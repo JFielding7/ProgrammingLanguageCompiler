@@ -8,8 +8,8 @@ use crate::ast::unary_operator_node::{UnaryOperatorNode};
 use crate::error::spanned_error::SpannableError;
 use crate::lexer::token::TokenType::*;
 use crate::lexer::token::{Token, TokenType};
-use crate::operators::binary_operators::BinaryOperatorType;
-use crate::operators::unary_operators::UnaryOperatorType;
+use crate::operators::binary_operators::BinaryOperator;
+use crate::operators::unary_operators::UnaryOperator;
 use crate::syntax::error::SyntaxError::{InvalidExpression, UnmatchedGroupOpening};
 use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::expression::OperatorPrecedence::Prefix;
@@ -113,8 +113,8 @@ fn operators_with_lhs_precedence(op: &Token) -> Option<(u8, u8)> {
 }
 
 
-fn binary_operator_type(op: &Token) -> Option<BinaryOperatorType> {
-    use BinaryOperatorType::*;
+fn binary_operator_type(op: &Token) -> Option<BinaryOperator> {
+    use BinaryOperator::*;
 
     Some(match op.token_type {
         Equals => Assign,
@@ -158,8 +158,8 @@ fn binary_operator_type(op: &Token) -> Option<BinaryOperatorType> {
     })
 }
 
-fn prefix_unary_operator_type(op: &Token) -> Option<UnaryOperatorType> {
-    use UnaryOperatorType::*;
+fn prefix_unary_operator_type(op: &Token) -> Option<UnaryOperator> {
+    use UnaryOperator::*;
 
    Some(match op.token_type {
         Minus => Neg,
@@ -171,8 +171,8 @@ fn prefix_unary_operator_type(op: &Token) -> Option<UnaryOperatorType> {
     })
 }
 
-fn postfix_unary_operator_type(op: &Token) -> Option<UnaryOperatorType> {
-    use UnaryOperatorType::*;
+fn postfix_unary_operator_type(op: &Token) -> Option<UnaryOperator> {
+    use UnaryOperator::*;
 
     Some(match op.token_type {
         PlusPlus => PostInc,

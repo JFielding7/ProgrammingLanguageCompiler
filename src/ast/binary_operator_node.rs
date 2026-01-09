@@ -1,16 +1,16 @@
 use crate::ast::arena_ast::ASTNodeId;
-use crate::operators::binary_operators::BinaryOperatorType;
+use crate::operators::binary_operators::BinaryOperator;
 
 #[derive(Debug)]
 pub struct BinaryOperatorNode {
-    pub op_type: BinaryOperatorType,
+    pub op_type: BinaryOperator,
     pub left: ASTNodeId,
     pub right: ASTNodeId,
 }
 
 impl BinaryOperatorNode {
     pub fn new(
-        op_type: BinaryOperatorType,
+        op_type: BinaryOperator,
         left: ASTNodeId,
         right: ASTNodeId,
     ) -> Self {

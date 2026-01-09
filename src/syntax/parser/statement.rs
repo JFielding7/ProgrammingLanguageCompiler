@@ -31,6 +31,10 @@ impl Statement {
         }
     }
 
+    pub fn indent_token(&self) -> &Token {
+        &self[0]
+    }
+
     pub fn token_after_indent(&self) -> &Token {
         &self[Self::INDEX_AFTER_INDENT]
     }

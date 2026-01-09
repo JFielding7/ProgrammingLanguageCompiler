@@ -1,7 +1,5 @@
-use strum::EnumCount;
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, EnumCount)]
-pub enum UnaryOperatorType {
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub enum UnaryOperator {
     Neg,
     Not,
     BitNot,

@@ -1,11 +1,16 @@
-use crate::lexer::token::TokenType::{CloseParen, Colon, Comma, Identifier, OpenParen};
+use string_interner::DefaultSymbol;
 use crate::ast::function_def_node::Parameter;
 use crate::error::spanned_error::SpannableError;
+use crate::lexer::token::TokenType::{CloseParen, Colon, Comma, Identifier, OpenParen};
 use crate::syntax::error::SyntaxError::UnexpectedExpression;
 use crate::syntax::error::SyntaxResult;
 use crate::syntax::parser::token_stream::TokenStream;
 use crate::syntax::parser::type_annotation::parse_type_annotation;
 use crate::types::type_annotation::TypeAnnotation;
+
+pub fn parse_function_name(token_stream: &mut TokenStream) -> SyntaxResult<DefaultSymbol> {
+    Ok(token_stream.expect_next_identifier()?)
+}
 
 fn parse_parameter(token_stream: &mut TokenStream) -> SyntaxResult<Parameter> {
     let param_name = token_stream.expect_next_token(Identifier)?.symbol;
@@ -21,6 +26,7 @@ pub fn parse_parameters(token_stream: &mut TokenStream) -> SyntaxResult<Vec<Para
     let mut params = Vec::new();
 
     if token_stream.peek_matches(CloseParen) {
+        token_stream.next();
         return Ok(params);
     }
 
@@ -36,11 +42,21 @@ pub fn parse_parameters(token_stream: &mut TokenStream) -> SyntaxResult<Vec<Para
     Ok(params)
 }
 
+fn parse_return_type_annotation(token_stream: &mut TokenStream) -> SyntaxResult<TypeAnnotation> {
+    token_stream.next();
+    let type_annotation = parse_type_annotation(token_stream)?;
+
+    match token_stream.next() {
+        None => Ok(type_annotation),
+        Some(token) => Err(UnexpectedExpression.at(token.span))
+    }
+}
+
 pub fn parse_return_type(token_stream: &mut TokenStream) -> SyntaxResult<Option<TypeAnnotation>> {
     match token_stream.peek() {
         Some(&token) => {
             if *token == Colon {
-                Ok(Some(parse_type_annotation(token_stream)?))
+                Ok(Some(parse_return_type_annotation(token_stream)?))
             } else {
                 Err(UnexpectedExpression.at(token.span))
             }

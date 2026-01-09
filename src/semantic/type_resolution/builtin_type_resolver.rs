@@ -1,6 +1,6 @@
 use std::hash::Hash;
-use crate::operators::binary_operators::BinaryOperatorType;
-use crate::operators::unary_operators::UnaryOperatorType;
+use crate::operators::binary_operators::BinaryOperator;
+use crate::operators::unary_operators::UnaryOperator;
 use crate::types::data_type::DataType;
 use crate::types::data_type::DataType::Bool;
 
@@ -8,9 +8,9 @@ pub trait BuiltinTypeResolver<Operands> {
     fn resolve_builtins(&self, operand: &Operands) -> Option<DataType>;
 }
 
-impl BuiltinTypeResolver<DataType> for UnaryOperatorType {
+impl BuiltinTypeResolver<DataType> for UnaryOperator {
     fn resolve_builtins(&self, operand: &DataType) -> Option<DataType> {
-        use UnaryOperatorType::*;
+        use UnaryOperator::*;
         use DataType::*;
 
         Some(match self {
@@ -38,9 +38,9 @@ impl BuiltinTypeResolver<DataType> for UnaryOperatorType {
 }
 
 
-impl BuiltinTypeResolver<(DataType, DataType)> for BinaryOperatorType {
+impl BuiltinTypeResolver<(DataType, DataType)> for BinaryOperator {
     fn resolve_builtins(&self, operands: &(DataType, DataType)) -> Option<DataType> {
-        use BinaryOperatorType::*;
+        use BinaryOperator::*;
         use DataType::*;
 
         let (lhs_type, rhs_type) = operands.clone();

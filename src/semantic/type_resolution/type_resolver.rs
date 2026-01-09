@@ -1,10 +1,8 @@
 use crate::ast::arena_ast::{ASTNodeId, AST};
 use crate::ast::ast_node::ASTNodeType;
-use crate::ast::binary_operator_node::BinaryOperatorNode;
-use crate::ast::unary_operator_node::UnaryOperatorNode;
-use crate::operators::binary_operators::BinaryOperatorType;
-use crate::operators::binary_operators::BinaryOperatorType::Assign;
-use crate::operators::unary_operators::UnaryOperatorType;
+use crate::operators::binary_operators::BinaryOperator;
+use crate::operators::binary_operators::BinaryOperator::Assign;
+use crate::operators::unary_operators::UnaryOperator;
 use crate::semantic::error::SemanticError::{MismatchedBinaryOperatorTypes, MismatchedUnaryOperatorTypes};
 use crate::semantic::error::SemanticResult;
 use crate::semantic::type_resolution::operator_registry::OperatorRegistry;
@@ -12,8 +10,8 @@ use crate::types::data_type::DataType;
 
 pub struct TypeResolver {
     ast: AST,
-    unary_op_impl: OperatorRegistry<UnaryOperatorType, DataType>,
-    binary_op_impl: OperatorRegistry<BinaryOperatorType, (DataType, DataType)>,
+    unary_op_impl: OperatorRegistry<UnaryOperator, DataType>,
+    binary_op_impl: OperatorRegistry<BinaryOperator, (DataType, DataType)>,
 }
 
 impl TypeResolver {
@@ -25,30 +23,41 @@ impl TypeResolver {
         }
     }
 
-    pub fn resolve_type(&self, ast_node_id: ASTNodeId) -> SemanticResult<Option<DataType>> {
+    fn resolve_type(&mut self, ast_node_id: ASTNodeId) -> SemanticResult<()> {
         use ASTNodeType::*;
         use DataType::*;
 
         let node = self.ast.lookup(ast_node_id);
 
-        if let Some(data_type) = &node.data_type {
-            return Ok(Some(data_type.clone()));
+        if let Some(_) = &node.data_type {
+            return Ok(());
         }
         
         let data_type = match &node.node_type {
-            IntLiteral(_) => Int,
-            StringLiteral(_) => String,
-            BinaryOperator(op) => self.resolve_binary_operation_type(&op)?,
+            IntLiteral(_) => Some(Int),
+            StringLiteral(_) => Some(String),
+            Variable(v) => None,
+            UnaryOperator(op) => {
+                Some(self.resolve_unary_operation_type(op.op_type, op.operand)?)
+            },
+            BinaryOperator(op) => {
+                Some(self.resolve_binary_operation_type(op.op_type, op.left, op.right)?)
+            },
             _ => unimplemented!("{:?} type resolution unimplemented", node.node_type),
         };
 
-        Ok(Some(data_type))
-    }
+        self.ast.lookup_mut(ast_node_id).data_type = data_type;
 
-    fn resolve_unary_operation_type(&self, operator_node: &UnaryOperatorNode) -> SemanticResult<DataType> {
-        let operator_type = operator_node.op_type;
-        
-        let operand_type = match &self.ast.lookup(operator_node.operand).data_type {
+        Ok(())
+    }
+    
+    // fn resolve_variable_type(&self) {
+    //
+    // }
+
+    fn resolve_unary_operation_type(&self, operator_type: UnaryOperator, operand: ASTNodeId) -> SemanticResult<DataType> {
+
+        let operand_type = match &self.ast.lookup(operand).data_type {
             Some(e) => e,
             None => return Err(MismatchedUnaryOperatorTypes(operator_type, None)),
         };
@@ -59,11 +68,10 @@ impl TypeResolver {
         }
     }
 
-    fn resolve_binary_operation_type(&self, operator_node: &BinaryOperatorNode) -> SemanticResult<DataType> {
-        let operator_type = operator_node.op_type;
+    fn resolve_binary_operation_type(&mut self, operator_type: BinaryOperator, left: ASTNodeId, right: ASTNodeId) -> SemanticResult<DataType> {
 
-        let rhs_type_opt = &self.ast.lookup(operator_node.right).data_type;
-        let lhs_type_opt = &self.ast.lookup(operator_node.left).data_type;
+        let rhs_type_opt = &self.ast.lookup(right).data_type;
+        let lhs_type_opt = &self.ast.lookup(left).data_type;
 
         let rhs_type = match rhs_type_opt {
             Some(data_type) => data_type.clone(),
@@ -76,6 +84,7 @@ impl TypeResolver {
             Some(data_type) => data_type.clone(),
             None => {
                 return if operator_type == Assign {
+                    self.ast.lookup_mut(left).data_type = Some(rhs_type.clone());
                     Ok(rhs_type)
                 } else {
                     Err(MismatchedBinaryOperatorTypes(operator_type, None, rhs_type_opt.clone()))
@@ -93,9 +102,7 @@ impl TypeResolver {
         let mut resolver = TypeResolver::new(ast);
 
         for id in resolver.ast.ast_node_id_iter() {
-            let t = resolver.resolve_type(id)?;
-
-            resolver.ast.lookup_mut(id).data_type = t;
+            resolver.resolve_type(id)?;
         }
 
         Ok(resolver.ast)
