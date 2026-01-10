@@ -1,6 +1,6 @@
 use crate::ast::arena_ast::AST;
 use crate::compiler_context::CompilerContext;
-use crate::lexer::tokenizer::Lexer;
+use crate::lexer::tokenizer::lex_source_file;
 use crate::syntax::parser::ast_parser::ASTParser;
 use error::compiler_error::CompilerError::NoInputFiles;
 use error::compiler_error::CompilerResult;
@@ -22,7 +22,7 @@ mod operators;
 
 fn compile_source_file(source_file: &SourceFile, compiler_context: &mut CompilerContext) -> Result<(), SpannedError> {
 
-    let source_lines = Lexer::lex_source_file(source_file, compiler_context)?;
+    let source_lines = lex_source_file(source_file, compiler_context)?;
 
     let ast: AST = ASTParser::generate_ast(source_lines)?;
 

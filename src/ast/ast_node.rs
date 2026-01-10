@@ -9,6 +9,7 @@ use crate::ast::function_def_node::FunctionDefNode;
 use crate::ast::if_node::IfNode;
 use crate::ast::index_node::IndexNode;
 use crate::ast::unary_operator_node::UnaryOperatorNode;
+use crate::ast::variable_node::VariableNode;
 use crate::ast::while_node::WhileNode;
 use crate::types::data_type::DataType;
 use crate::types::type_annotation::TypeAnnotation;
@@ -17,7 +18,6 @@ use crate::types::type_annotation::TypeAnnotation;
 pub struct ASTNode {
     pub node_type: ASTNodeType,
     pub span: SourceSpan,
-    pub type_annotation: Option<TypeAnnotation>,
     pub data_type: Option<DataType>,
 }
 
@@ -26,14 +26,8 @@ impl ASTNode {
         Self { 
             node_type, 
             span,
-            type_annotation: None,
             data_type: None,
         }
-    }
-
-    pub fn annotate_type(mut self, type_annotation: Option<TypeAnnotation>) -> Self {
-        self.type_annotation = type_annotation;
-        self
     }
 }
 
@@ -42,7 +36,7 @@ pub enum ASTNodeType {
     IntLiteral(DefaultSymbol),
     StringLiteral(DefaultSymbol),
 
-    Variable(DefaultSymbol),
+    Variable(VariableNode),
 
     UnaryOperator(UnaryOperatorNode),
 
@@ -85,6 +79,7 @@ macro_rules! impl_to_ast_node_type {
 }
 
 impl_to_ast_node_type! {
+    VariableNode => Variable,
     UnaryOperatorNode => UnaryOperator,
     BinaryOperatorNode => BinaryOperator,
     IndexNode => Index,

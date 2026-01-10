@@ -1,10 +1,12 @@
 use crate::ast::access_node::{AccessNode, Member};
 use crate::ast::arena_ast::{ASTNodeId, AST};
 use crate::ast::ast_node::{ASTNode, ASTNodeType, SpannableASTNode};
+use crate::ast::ast_node::ASTNodeType::Variable;
 use crate::ast::binary_operator_node::{BinaryOperatorNode};
 use crate::ast::function_call_node::FunctionCallNode;
 use crate::ast::index_node::IndexNode;
 use crate::ast::unary_operator_node::{UnaryOperatorNode};
+use crate::ast::variable_node::VariableNode;
 use crate::error::spanned_error::SpannableError;
 use crate::lexer::token::TokenType::*;
 use crate::lexer::token::{Token, TokenType};
@@ -217,7 +219,6 @@ impl<'a> ExpressionParser<'a> {
         let node = match token.token_type {
             TokenType::IntLiteral    => ASTNode::new(IntLiteral(token_symbol), token_span),
             TokenType::StringLiteral => ASTNode::new(StringLiteral(token_symbol), token_span),
-            Identifier               => ASTNode::new(Variable(token_symbol), token_span),
             _ => return Err(InvalidExpression.at(token_span))
         };
 
@@ -281,6 +282,18 @@ impl<'a> ExpressionParser<'a> {
         }
     }
 
+    fn parse_variable(&mut self, token: &Token) -> SyntaxResult<ASTNodeId> {
+        let type_annotation = if self.token_stream.peek_matches(Colon) {
+            self.token_stream.next();
+            Some(parse_type_annotation(&mut self.token_stream)?)
+        } else {
+            None
+        };
+
+        let var_node = VariableNode::new(token.symbol, type_annotation).at(token.span);
+        Ok(self.ast.add_node(var_node))
+    }
+
     fn nud_hook(&mut self) -> SyntaxResult<ASTNodeId> {
 
         match self.token_stream.next() {
@@ -293,6 +306,9 @@ impl<'a> ExpressionParser<'a> {
                         self.parse_expression_rec(Prefix.as_u8())?
                     ).at(token.span);
                     Ok(self.ast.add_node(unary_node))
+
+                } else if *token == Identifier {
+                    self.parse_variable(token)
 
                 } else if *token == OpenParen {
                     self.parse_required_grouped_expression(token)
@@ -339,35 +355,28 @@ impl<'a> ExpressionParser<'a> {
             return Err(InvalidExpression.at(self.token_stream.end_span()))
         }
 
-        let mut left_node = self.nud_hook()?;
+        let mut left_node_id = self.nud_hook()?;
 
         while let Some(&token) = self.token_stream.peek() {
 
             if is_terminal(token) {
-                let type_annotation = if *token == Colon {
-                    self.token_stream.next();
-                    Some(parse_type_annotation(&mut self.token_stream)?)
-                } else {
-                    None
-                };
-
-                return Ok(self.ast.annotate_type(left_node, type_annotation));
+                return Ok(left_node_id);
             }
 
             if let Some((left_precedence, right_precedence)) = operators_with_lhs_precedence(token) {
                 if left_precedence < curr_precedence {
-                    return Ok(left_node)
+                    return Ok(left_node_id)
                 }
 
                 self.token_stream.next();
-                left_node = self.led_hook(token, left_node, right_precedence)?;
+                left_node_id = self.led_hook(token, left_node_id, right_precedence)?;
 
             } else {
                 return Err(InvalidExpression.at(token.span));
             }
         }
 
-        Ok(left_node)
+        Ok(left_node_id)
     }
 
     pub fn parse(token_stream: &'a mut TokenStream<'a>, ast_arena: &'a mut AST) -> SyntaxResult<ASTNodeId> {

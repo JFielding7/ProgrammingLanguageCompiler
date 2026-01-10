@@ -34,11 +34,6 @@ impl AST {
         }
     }
 
-    pub fn annotate_type(&mut self, id: ASTNodeId, type_annotation: Option<TypeAnnotation>) -> ASTNodeId {
-        self.node_arena[id.0].type_annotation = type_annotation;
-        id
-    }
-
     pub fn lookup(&self, id: ASTNodeId) -> &ASTNode {
         &self.node_arena[id.0]
     }
