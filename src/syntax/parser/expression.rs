@@ -7,6 +7,7 @@ use crate::ast::function_call_node::FunctionCallNode;
 use crate::ast::index_node::IndexNode;
 use crate::ast::unary_operator_node::{UnaryOperatorNode};
 use crate::ast::variable_node::VariableNode;
+use crate::compiler_context::scope::ScopeId;
 use crate::error::spanned_error::SpannableError;
 use crate::lexer::token::TokenType::*;
 use crate::lexer::token::{Token, TokenType};
@@ -200,13 +201,15 @@ fn close_token(open_token: &Token) -> TokenType {
 pub struct ExpressionParser<'a> {
     token_stream: &'a mut TokenStream<'a>,
     ast: &'a mut AST,
+    scope: ScopeId,
 }
 
 impl<'a> ExpressionParser<'a> {
-    pub fn new(token_stream: &'a mut TokenStream<'a>, ast: &'a mut AST) -> Self {
+    pub fn new(token_stream: &'a mut TokenStream<'a>, ast: &'a mut AST, scope: ScopeId) -> Self {
         Self {
             token_stream,
             ast,
+            scope
         }
     }
 
@@ -217,8 +220,8 @@ impl<'a> ExpressionParser<'a> {
         let token_span = token.span;
 
         let node = match token.token_type {
-            TokenType::IntLiteral    => ASTNode::new(IntLiteral(token_symbol), token_span),
-            TokenType::StringLiteral => ASTNode::new(StringLiteral(token_symbol), token_span),
+            TokenType::IntLiteral    => ASTNode::new(IntLiteral(token_symbol), token_span, self.scope),
+            TokenType::StringLiteral => ASTNode::new(StringLiteral(token_symbol), token_span, self.scope),
             _ => return Err(InvalidExpression.at(token_span))
         };
 
@@ -290,7 +293,7 @@ impl<'a> ExpressionParser<'a> {
             None
         };
 
-        let var_node = VariableNode::new(token.symbol, type_annotation).at(token.span);
+        let var_node = VariableNode::new(token.symbol, type_annotation).at(token.span, self.scope);
         Ok(self.ast.add_node(var_node))
     }
 
@@ -304,7 +307,7 @@ impl<'a> ExpressionParser<'a> {
                     let unary_node = UnaryOperatorNode::new(
                         unary_op_type,
                         self.parse_expression_rec(Prefix.as_u8())?
-                    ).at(token.span);
+                    ).at(token.span, self.scope);
                     Ok(self.ast.add_node(unary_node))
 
                 } else if *token == Identifier {
@@ -325,22 +328,22 @@ impl<'a> ExpressionParser<'a> {
 
         let node = if let Some(op_type) = binary_operator_type(token) {
             let right_node = self.parse_expression_rec(right_precedence)?;
-            BinaryOperatorNode::new(op_type, left_node, right_node).at(token_span)
+            BinaryOperatorNode::new(op_type, left_node, right_node).at(token_span, self.scope)
 
         } else if let Some(op_type) = postfix_unary_operator_type(token) {
-            UnaryOperatorNode::new(op_type, left_node).at(token_span)
+            UnaryOperatorNode::new(op_type, left_node).at(token_span, self.scope)
 
         } else if *token == OpenBracket {
             let args = self.parse_required_grouped_expression(token)?;
-            IndexNode::new(left_node, args).at(token_span)
+            IndexNode::new(left_node, args).at(token_span, self.scope)
 
         } else if *token == OpenParen {
             let args = self.parse_optional_grouped_expression(token)?;
-            FunctionCallNode::new(left_node, args).at(token_span)
+            FunctionCallNode::new(left_node, args).at(token_span, self.scope)
 
         } else if *token == Dot {
             let member = self.parse_accessed_member()?;
-            AccessNode::new(left_node, member).at(token_span)
+            AccessNode::new(left_node, member).at(token_span, self.scope)
 
         } else {
             unreachable!("Led hook not implemented");
@@ -379,7 +382,7 @@ impl<'a> ExpressionParser<'a> {
         Ok(left_node_id)
     }
 
-    pub fn parse(token_stream: &'a mut TokenStream<'a>, ast_arena: &'a mut AST) -> SyntaxResult<ASTNodeId> {
-        ExpressionParser::new(token_stream, ast_arena).parse_expression_rec(0)
+    pub fn parse(token_stream: &'a mut TokenStream<'a>, ast_arena: &'a mut AST, scope: ScopeId) -> SyntaxResult<ASTNodeId> {
+        ExpressionParser::new(token_stream, ast_arena, scope).parse_expression_rec(0)
     }
 }

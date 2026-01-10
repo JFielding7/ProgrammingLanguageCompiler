@@ -3,7 +3,7 @@ use crate::types::type_annotation::TypeAnnotation;
 
 #[derive(Debug)]
 pub struct VariableNode {
-    name: DefaultSymbol,
+    pub name: DefaultSymbol,
     type_annotation: Option<TypeAnnotation>,
 }
 

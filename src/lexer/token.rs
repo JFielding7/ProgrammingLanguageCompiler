@@ -156,7 +156,7 @@ impl Token {
     }
 
     pub fn display(&self, ctx: &mut CompilerContext) -> String {
-        if let Some(s) = ctx.resolve_symbol(self.symbol) {
+        if let Some(s) = ctx.get_str(self.symbol) {
             format!("'{}'", s)
         } else {
             format!("<invalid symbol {:?}>", self.symbol)

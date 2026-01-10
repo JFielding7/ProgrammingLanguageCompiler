@@ -6,10 +6,10 @@ use crate::types::data_type::DataType;
 #[derive(Error, Debug)]
 pub enum SemanticError {
     #[error("Error:")]
-    MismatchedUnaryOperatorTypes(UnaryOperator, Option<DataType>),
+    MismatchedUnaryOperatorTypes(UnaryOperator),
     
     #[error("Error:")]
-    MismatchedBinaryOperatorTypes(BinaryOperator, Option<DataType>, Option<DataType>),
+    MismatchedBinaryOperatorTypes(BinaryOperator), // TODO: adding operands types correctly
 }
 
 pub type SemanticResult<T> = Result<T, SemanticError>;

@@ -7,7 +7,7 @@ use error::compiler_error::CompilerResult;
 use crate::error::compiler_error::CompilerError;
 use crate::error::compiler_error::CompilerError::FileRead;
 use crate::error::spanned_error::SpannedError;
-use crate::semantic::type_resolution::type_resolver::TypeResolver;
+use crate::semantic::type_synthesis::type_synthesizer::TypeSynthesizer;
 use crate::source::source_file::SourceFile;
 
 mod lexer;
@@ -26,7 +26,7 @@ fn compile_source_file(source_file: &SourceFile, compiler_context: &mut Compiler
 
     let ast: AST = ASTParser::generate_ast(source_lines)?;
 
-    let ast = TypeResolver::resolve_ast_types(ast);
+    let ast = TypeSynthesizer::compute_ast_types(ast, compiler_context);
 
     println!("{:?}", ast);
 

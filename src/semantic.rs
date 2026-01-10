@@ -1,3 +1,3 @@
 pub mod error;
-mod symbol_table;
-pub mod type_resolution;
+pub mod type_synthesis;
+mod name_resolution;

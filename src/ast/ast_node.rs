@@ -1,5 +1,3 @@
-use string_interner::DefaultSymbol;
-use crate::source::source_span::SourceSpan;
 use crate::ast::access_node::AccessNode;
 use crate::ast::ast_node::ASTNodeType::*;
 use crate::ast::binary_operator_node::BinaryOperatorNode;
@@ -11,21 +9,25 @@ use crate::ast::index_node::IndexNode;
 use crate::ast::unary_operator_node::UnaryOperatorNode;
 use crate::ast::variable_node::VariableNode;
 use crate::ast::while_node::WhileNode;
-use crate::types::data_type::DataType;
-use crate::types::type_annotation::TypeAnnotation;
+use crate::source::source_span::SourceSpan;
+use string_interner::DefaultSymbol;
+use crate::compiler_context::scope::ScopeId;
+use crate::compiler_context::type_arena::DataTypeId;
 
 #[derive(Debug)]
 pub struct ASTNode {
-    pub node_type: ASTNodeType,
+    pub node_data_type: ASTNodeType,
     pub span: SourceSpan,
-    pub data_type: Option<DataType>,
+    pub scope: ScopeId,
+    pub data_type: Option<DataTypeId>,
 }
 
 impl ASTNode {
-    pub fn new(node_type: ASTNodeType, span: SourceSpan) -> Self {
-        Self { 
-            node_type, 
+    pub fn new(node_data_type: ASTNodeType, span: SourceSpan, scope: ScopeId) -> Self {
+        Self {
+            node_data_type, 
             span,
+            scope,
             data_type: None,
         }
     }
@@ -58,9 +60,9 @@ pub enum ASTNodeType {
 }
 
 pub trait SpannableASTNode {
-    fn at(self, span: SourceSpan) -> ASTNode
+    fn at(self, span: SourceSpan, scope: ScopeId) -> ASTNode
     where Self: Sized, ASTNodeType: From<Self> {
-        ASTNode::new(self.into(), span)
+        ASTNode::new(self.into(), span, scope)
     }
 }
 
